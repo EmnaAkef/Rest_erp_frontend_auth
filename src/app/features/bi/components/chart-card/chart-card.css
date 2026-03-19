@@ -1,0 +1,33 @@
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #edf1f7;
+  border-radius: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.chart-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #7b8494;
+}
+
+.chart-placeholder {
+  margin-top: 22px;
+  height: 220px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #eef2ff 0%, #f8faff 100%);
+  border: 1px dashed #c7d2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6366f1;
+  font-weight: 600;
+}

@@ -1,7 +1,7 @@
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 28px;
 }
 
 .page-header {
@@ -13,7 +13,7 @@
 
 .page-title h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: #1f2937;
 }
@@ -24,9 +24,142 @@
   font-size: 14px;
 }
 
-.page-content-box {
-  min-height: 500px;
-  background: #f7f8fc;
-  border-radius: 18px;
-  padding: 24px;
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.kpi-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.kpi-grid-5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.kpi-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.chart-row {
+  display: grid;
+  gap: 18px;
+}
+
+.two-cols {
+  grid-template-columns: 2fr 1fr;
+}
+
+.bottom-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.half {
+  min-width: 0;
+}
+
+.chart-card {
+  background: #ffffff;
+  border: 1px solid #edf1f7;
+  border-radius: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.chart-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.chart-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #7b8494;
+}
+
+.chart-container {
+  position: relative;
+  height: 260px;
+  margin-top: 20px;
+}
+
+.table-card {
+  background: #ffffff;
+  border: 1px solid #edf1f7;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.table-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.table-header p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: #7b8494;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 14px 10px;
+  font-size: 14px;
+}
+
+thead th {
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom: 1px solid #edf1f7;
+}
+
+tbody td {
+  color: #1f2937;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.footer-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1400px) {
+  .kpi-grid-5 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .two-cols,
+  .bottom-sections,
+  .footer-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .kpi-grid-5,
+  .kpi-grid-2,
+  .footer-kpis {
+    grid-template-columns: 1fr;
+  }
 }

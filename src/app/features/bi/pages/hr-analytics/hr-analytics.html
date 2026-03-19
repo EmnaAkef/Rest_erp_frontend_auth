@@ -1,14 +1,210 @@
 <div class="dashboard-page">
   <div class="page-header">
     <div class="page-title">
-      <h1>HR Analytics Dashboard</h1>
-      <p>Track workforce metrics, attendance, and employee performance</p>
+      <h1>Human Resources Management</h1>
+      <p>Employee management, attendance, and payroll overview</p>
     </div>
 
     <app-page-filters></app-page-filters>
   </div>
 
-  <div class="page-content-box">
-    hr analytics works!
+  <section class="dashboard-section">
+    <app-section-title
+      title="Workforce Overview"
+      subtitle="">
+    </app-section-title>
+
+    <div class="kpi-grid kpi-grid-5">
+      @for (item of workforceKpis; track item.title) {
+        <app-kpi-card
+          [title]="item.title"
+          [value]="item.value"
+          [trend]="item.trend"
+          [icon]="item.icon"
+          [trendType]="item.trendType">
+        </app-kpi-card>
+      }
+    </div>
+
+    <div class="chart-row two-cols">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Headcount & Growth Trends</h3>
+          <p>Visualizing workforce stability and expansion over the last 8 months.</p>
+        </div>
+
+        <div class="chart-container">
+          <canvas
+            baseChart
+            [data]="headcountChartData"
+            [type]="headcountChartType"
+            [options]="commonChartOptions">
+          </canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Tenure Distribution</h3>
+          <p>Segmenting workforce by loyalty years.</p>
+        </div>
+
+        <div class="chart-container">
+          <canvas
+            baseChart
+            [data]="tenureChartData"
+            [type]="tenureChartType"
+            [options]="commonChartOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Attendance & Presence"
+      subtitle="">
+    </app-section-title>
+
+    <div class="kpi-grid kpi-grid-5">
+      @for (item of attendanceKpis; track item.title) {
+        <app-kpi-card
+          [title]="item.title"
+          [value]="item.value"
+          [trend]="item.trend"
+          [icon]="item.icon"
+          [trendType]="item.trendType">
+        </app-kpi-card>
+      }
+    </div>
+
+    <div class="chart-row two-cols">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Attendance Stability</h3>
+          <p>Daily presence and overtime volume variance.</p>
+        </div>
+
+        <div class="chart-container">
+          <canvas
+            baseChart
+            [data]="attendanceChartData"
+            [type]="attendanceChartType"
+            [options]="commonChartOptions">
+          </canvas>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Upcoming Birthdays</h3>
+          <p>Employees have their birthdays soon.</p>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Department</th>
+              <th>Remaining days</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of birthdays; track item.name) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.department }}</td>
+                <td>{{ item.days }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="bottom-sections">
+    <section class="dashboard-section half">
+      <app-section-title
+        title="Payroll"
+        subtitle="">
+      </app-section-title>
+
+      <div class="kpi-grid kpi-grid-2">
+        @for (item of payrollKpis; track item.title) {
+          <app-kpi-card
+            [title]="item.title"
+            [value]="item.value"
+            [trend]="item.trend"
+            [icon]="item.icon"
+            [trendType]="item.trendType">
+          </app-kpi-card>
+        }
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Salary Benchmarking</h3>
+          <p>Average vs Maximum compensation by department.</p>
+        </div>
+
+        <div class="chart-container">
+          <canvas
+            baseChart
+            [data]="salaryChartData"
+            [type]="salaryChartType"
+            [options]="commonChartOptions">
+          </canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-section half">
+      <app-section-title
+        title="Recruitment"
+        subtitle="">
+      </app-section-title>
+
+      <div class="kpi-grid kpi-grid-2">
+        @for (item of recruitmentKpis; track item.title) {
+          <app-kpi-card
+            [title]="item.title"
+            [value]="item.value"
+            [trend]="item.trend"
+            [icon]="item.icon"
+            [trendType]="item.trendType">
+          </app-kpi-card>
+        }
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Hiring Funnel</h3>
+          <p>Pipeline efficiency from initial application to final hire.</p>
+        </div>
+
+        <div class="chart-container">
+          <canvas
+            baseChart
+            [data]="hiringFunnelChartData"
+            [type]="hiringFunnelChartType"
+            [options]="commonChartOptions">
+          </canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer-kpis">
+    @for (item of footerKpis; track item.title) {
+      <app-kpi-card
+        [title]="item.title"
+        [value]="item.value"
+        [trend]="item.trend"
+        [icon]="item.icon"
+        [trendType]="item.trendType">
+      </app-kpi-card>
+    }
   </div>
 </div>
