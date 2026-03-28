@@ -1,11 +1,39 @@
-<div class="dashboard-page">
+<div class="dashboard-page" #dashboardContent>
   <div class="page-header">
     <div class="page-title">
       <h1>Human Resources Management</h1>
       <p>Employee management, attendance, and payroll overview</p>
     </div>
 
-    <app-page-filters></app-page-filters>
+    <div class="page-header-right" data-html2canvas-ignore="true">
+      <div class="period-group">
+        <button>Last 30 Days</button>
+        <button class="active">Last 6 Months</button>
+        <button>Year to Date</button>
+      </div>
+
+      <div class="header-divider"></div>
+
+      <button class="header-action-btn">
+        <span class="material-symbols-outlined btn-icon">filter_alt</span>
+        <span>Filters</span>
+      </button>
+
+      <div class="export-wrapper" data-html2canvas-ignore="true">
+        <button class="header-export-btn" (click)="toggleExportMenu()">
+          <span class="material-symbols-outlined btn-icon">download</span>
+          <span>Export</span>
+        </button>
+
+        @if (isExportMenuOpen) {
+          <div class="export-menu" data-html2canvas-ignore="true">
+            <button (click)="exportAsPDF()">Export as PDF</button>
+            <button (click)="exportAsExcel()">Export as Excel</button>
+            <button (click)="exportAsCSV()">Export as CSV</button>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 
   <section class="dashboard-section">
@@ -104,11 +132,11 @@
 
         <table>
           <thead>
-            <tr>
-              <th>Employee</th>
-              <th>Department</th>
-              <th>Remaining days</th>
-            </tr>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Remaining days</th>
+          </tr>
           </thead>
           <tbody>
             @for (item of birthdays; track item.name) {

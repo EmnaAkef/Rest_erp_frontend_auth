@@ -5,5 +5,6 @@ import { Component } from '@angular/core';
   imports: [],
   templateUrl: './page-filters.html',
   styleUrl: './page-filters.css',
+  standalone: true,
 })
 export class PageFilters {}

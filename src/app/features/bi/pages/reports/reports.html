@@ -1,0 +1,233 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1>Reports Center</h1>
+      <p>Generate, customize, schedule, and manage business reports</p>
+    </div>
+
+    <div class="page-header-right">
+      <app-page-filters></app-page-filters>
+
+      <button class="new-report-btn">
+        <span class="material-symbols-outlined btn-icon">add</span>
+        <span>New Report</span>
+      </button>
+    </div>
+  </div>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Predefined Reports"
+      subtitle="Ready-to-use report templates with quick generation and export options">
+    </app-section-title>
+
+    <div class="template-grid">
+      @for (item of predefinedReports; track item.title) {
+        <div class="template-card">
+          <div class="template-top">
+            <span class="module-badge">{{ item.module }}</span>
+          </div>
+
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+
+          <div class="format-list">
+            @for (format of item.formats; track format) {
+              <span class="format-chip">{{ format }}</span>
+            }
+          </div>
+
+          <div class="card-actions">
+            <button class="ghost-btn">Preview</button>
+            <button class="primary-btn">Generate</button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="table-card">
+      <div class="table-head-row">
+        <h3>Generated Reports History</h3>
+      </div>
+
+      <table>
+        <thead>
+        <tr>
+          <th>Report Name</th>
+          <th>Date</th>
+          <th>Format</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (item of reportHistory; track item.name) {
+            <tr>
+              <td>{{ item.name }}</td>
+              <td>{{ item.date }}</td>
+              <td>{{ item.format }}</td>
+              <td>{{ item.status }}</td>
+              <td><a href="#">Download</a></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Report Builder"
+      subtitle="Create a custom report by combining metrics, dimensions, filters, and preview settings">
+    </app-section-title>
+
+    <div class="builder-grid">
+      <div class="builder-panel">
+        <h3>Available Metrics</h3>
+        <div class="option-list">
+          @for (item of availableMetrics; track item) {
+            <div class="option-chip">{{ item }}</div>
+          }
+        </div>
+
+        <h3>Available Dimensions</h3>
+        <div class="option-list">
+          @for (item of availableDimensions; track item) {
+            <div class="option-chip">{{ item }}</div>
+          }
+        </div>
+      </div>
+
+      <div class="builder-panel center-builder">
+        <h3>Builder Workspace</h3>
+
+        <div class="builder-box">
+          <h4>Selected Metrics</h4>
+          <div class="selected-list">
+            @for (item of selectedMetrics; track item) {
+              <span class="selected-chip">{{ item }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="builder-box">
+          <h4>Selected Dimensions</h4>
+          <div class="selected-list">
+            @for (item of selectedDimensions; track item) {
+              <span class="selected-chip">{{ item }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="builder-box">
+          <h4>Applied Filters</h4>
+          <div class="selected-list">
+            @for (item of selectedFilters; track item) {
+              <span class="selected-chip">{{ item }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="builder-actions">
+          <button class="ghost-btn">Save as Favorite</button>
+          <button class="primary-btn">Generate Report</button>
+        </div>
+      </div>
+
+      <div class="builder-panel">
+        <h3>Configuration</h3>
+
+        <div class="config-item">
+          <label>Format</label>
+          <div class="fake-select">PDF</div>
+        </div>
+
+        <div class="config-item">
+          <label>Group By</label>
+          <div class="fake-select">Month</div>
+        </div>
+
+        <div class="config-item">
+          <label>Sort By</label>
+          <div class="fake-select">Revenue Desc</div>
+        </div>
+
+        <div class="config-item">
+          <label>Preview</label>
+          <div class="preview-card">
+            <div class="preview-row"></div>
+            <div class="preview-row short"></div>
+            <div class="preview-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Scheduled Reports"
+      subtitle="Automate report generation and periodic email delivery to recipients">
+    </app-section-title>
+
+    <div class="scheduled-top-row">
+      <button class="primary-btn">Create Schedule</button>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+        <tr>
+          <th>Report</th>
+          <th>Frequency</th>
+          <th>Recipients</th>
+          <th>Next Run</th>
+          <th>Format</th>
+          <th>Status</th>
+        </tr>
+        </thead>
+        <tbody>
+          @for (item of scheduledReports; track item.title) {
+            <tr>
+              <td>{{ item.title }}</td>
+              <td>{{ item.frequency }}</td>
+              <td>{{ item.recipients }}</td>
+              <td>{{ item.nextRun }}</td>
+              <td>{{ item.format }}</td>
+              <td>
+                <span class="status-pill" [class]="getStatusClass(item.status)">
+                  {{ item.status }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="My Reports"
+      subtitle="Saved favorites, personal history, and shared reports with your team">
+    </app-section-title>
+
+    <div class="my-reports-grid">
+      @for (item of favoriteReports; track item.title) {
+        <div class="saved-report-card">
+          <div class="saved-top">
+            <span class="saved-type">{{ item.type }}</span>
+          </div>
+
+          <h3>{{ item.title }}</h3>
+          <p>Updated {{ item.updated }}</p>
+
+          <div class="card-actions">
+            <button class="ghost-btn">Open</button>
+            <button class="ghost-btn">Share</button>
+          </div>
+        </div>
+      }
+    </div>
+  </section>
+</div>

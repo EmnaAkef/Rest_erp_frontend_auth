@@ -1,14 +1,310 @@
-<div class="dashboard-page">
+<div class="dashboard-page" #dashboardContent>
   <div class="page-header">
     <div class="page-title">
-      <h1>Finance Analytics Dashboard</h1>
-      <p>Monitor financial performance, revenue, expenses, and cash flow</p>
+      <h1>Financial Overview</h1>
+      <p>Core profitability and operational performance metrics across the current fiscal period.</p>
     </div>
 
-    <app-page-filters></app-page-filters>
+    <div class="page-header-right" data-html2canvas-ignore="true">
+      <div class="period-group">
+        <button>Last 30 Days</button>
+        <button class="active">Last 6 Months</button>
+        <button>Year to Date</button>
+      </div>
+
+      <div class="header-divider"></div>
+
+      <button class="header-action-btn">
+        <span class="material-symbols-outlined btn-icon">filter_alt</span>
+        <span>Filters</span>
+      </button>
+
+      <div class="export-wrapper">
+        <button class="header-export-btn" (click)="toggleExportMenu()">
+          <span class="material-symbols-outlined btn-icon">download</span>
+          <span>Export</span>
+        </button>
+
+        @if (isExportMenuOpen) {
+          <div class="export-menu" data-html2canvas-ignore="true">
+            <button (click)="exportAsPDF()">Export as PDF</button>
+            <button (click)="exportAsExcel()">Export as Excel</button>
+            <button (click)="exportAsCSV()">Export as CSV</button>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 
-  <div class="page-content-box">
-    finance analytics works!
+  <section class="dashboard-section">
+    <div class="overview-grid">
+      <div class="overview-kpis">
+        @for (item of overviewKpis; track item.title) {
+          <div class="finance-kpi-card" [class.highlight-card]="item.highlight">
+            <div class="finance-kpi-top">
+              <div class="finance-icon-box">{{ item.icon }}</div>
+
+              @if (item.trend) {
+                <div
+                  class="finance-trend"
+                  [class.positive]="item.trendType === 'positive'"
+                  [class.negative]="item.trendType === 'negative'">
+                  {{ item.trend }}
+                </div>
+              }
+            </div>
+
+            <div class="finance-kpi-title">{{ item.title }}</div>
+            <div class="finance-kpi-value">{{ item.value }}</div>
+            <div class="finance-kpi-desc">{{ item.description }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="chart-card chart-card-small">
+        <div class="chart-card-head">
+          <h3>Revenue vs. Profit Trend</h3>
+          <span class="mini-tag">Monthly Analysis</span>
+        </div>
+
+        <div class="chart-container chart-small">
+          <canvas
+            baseChart
+            [data]="revenueTrendChartData"
+            [type]="revenueTrendChartType"
+            [options]="commonLineOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Cash and Treasury"
+      subtitle="Liquidity management, bank balances, and short-term cash flow forecasting.">
+    </app-section-title>
+
+    <div class="cash-grid">
+      <div class="cash-side-kpis">
+        @for (item of cashKpis; track item.title) {
+          <div class="mini-kpi-card">
+            <div class="mini-kpi-top">
+              <div class="finance-icon-box">{{ item.icon }}</div>
+
+              @if (item.trend) {
+                <div class="finance-trend positive">{{ item.trend }}</div>
+              }
+            </div>
+
+            <div class="mini-kpi-title">{{ item.title }}</div>
+            <div class="mini-kpi-value">{{ item.value }}</div>
+            <div class="mini-kpi-desc">{{ item.description }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <div>
+            <h3>Daily Cash Flow Analysis</h3>
+            <p>Visualizing operational inflows vs outflows for the current week.</p>
+          </div>
+        </div>
+
+        <div class="chart-container chart-tall">
+          <canvas
+            baseChart
+            [data]="cashFlowChartData"
+            [type]="cashFlowChartType"
+            [options]="commonBarOptions">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-section">
+    <app-section-title
+      title="Receivables and Payables"
+      subtitle="Management of outstanding invoices, vendor payments, and credit health.">
+    </app-section-title>
+
+    <div class="kpi-grid kpi-grid-4">
+      @for (item of receivableKpis; track item.title) {
+        <div class="mini-kpi-card" [class.warning-card]="item.warning">
+          <div class="mini-kpi-top">
+            <div class="finance-icon-box">{{ item.icon }}</div>
+          </div>
+
+          <div class="mini-kpi-title">{{ item.title }}</div>
+          <div class="mini-kpi-value">{{ item.value }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="two-cols-structure">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Top Outstanding Invoices</h3>
+        </div>
+
+        <table>
+          <thead>
+          <tr>
+            <th>Client / Vendor</th>
+            <th>Reference</th>
+            <th>Amount</th>
+            <th>Due Date</th>
+            <th>Status</th>
+          </tr>
+          </thead>
+          <tbody>
+            @for (item of outstandingInvoices; track item.reference) {
+              <tr>
+                <td>{{ item.client }}</td>
+                <td>{{ item.reference }}</td>
+                <td>{{ item.amount }}</td>
+                <td>{{ item.dueDate }}</td>
+                <td>
+                  <span class="status-pill" [class]="getStatusClass(item.status)">
+                    {{ item.status }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="right-column">
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <h3>Liability vs. Assets</h3>
+          </div>
+
+          <div class="chart-container chart-medium">
+            <canvas
+              baseChart
+              [data]="liabilityAssetsChartData"
+              [type]="liabilityAssetsChartType"
+              [options]="commonBarOptions">
+            </canvas>
+          </div>
+
+          <div class="summary-pairs">
+            <div class="summary-box">
+              <span>Total Liabilities</span>
+              <strong>$5.7M</strong>
+            </div>
+
+            <div class="summary-box">
+              <span>Asset Value</span>
+              <strong>$10.7M</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="bottom-grid">
+    <section class="dashboard-section">
+      <app-section-title
+        title="Taxes and Compliance"
+        subtitle="Summary of VAT collected, payable, and quarterly tax liabilities.">
+      </app-section-title>
+
+      <div class="kpi-grid kpi-grid-3">
+        @for (item of taxKpis; track item.title) {
+          <div class="mini-kpi-card" [class.highlight-card]="item.highlight">
+            <div class="mini-kpi-top">
+              <div class="finance-icon-box">{{ item.icon }}</div>
+            </div>
+
+            <div class="mini-kpi-title">{{ item.title }}</div>
+            <div class="mini-kpi-value">{{ item.value }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="compliance-card">
+        <div class="compliance-header">
+          <span class="shield-icon">◔</span>
+          <strong>Compliance Status: Full Compliance</strong>
+        </div>
+
+        <div class="compliance-content">
+          <div class="compliance-block">
+            <h4>Next Filing Dates</h4>
+
+            <div class="compliance-row">
+              <span>Quarterly VAT Return</span>
+              <strong>Nov 15, 2024</strong>
+            </div>
+
+            <div class="compliance-row">
+              <span>Income Tax Provisional</span>
+              <strong>Oct 31, 2024</strong>
+            </div>
+          </div>
+
+          <div class="compliance-block">
+            <h4>Recent Tax Payments</h4>
+
+            @for (item of taxPayments; track item.label) {
+              <div class="payment-row">
+                <div class="payment-left">
+                  <span class="payment-code">{{ item.code }}</span>
+                  <span>{{ item.label }}</span>
+                </div>
+                <strong>{{ item.amount }}</strong>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <app-section-title
+        title="Assets"
+        subtitle="Lifecycle management and depreciation.">
+      </app-section-title>
+
+      <div class="asset-card">
+        <div class="chart-card-head">
+          <h3>Asset Value Distribution</h3>
+        </div>
+
+        <div class="chart-container chart-medium">
+          <canvas
+            baseChart
+            [data]="assetDistributionChartData"
+            [type]="assetDistributionChartType"
+            [options]="commonLineOptions">
+          </canvas>
+        </div>
+
+        <div class="asset-legend">
+          <div class="legend-row">
+            <span class="dot dot-dark"></span>
+            <span>Fixed Assets</span>
+            <strong>$4.5M</strong>
+          </div>
+
+          <div class="legend-row">
+            <span class="dot dot-light"></span>
+            <span>Current Assets</span>
+            <strong>$1.2M</strong>
+          </div>
+        </div>
+
+        <div class="depreciation-box">
+          <span>↗ Depreciation Expense</span>
+          <strong>$124,500</strong>
+        </div>
+      </div>
+    </section>
   </div>
 </div>

@@ -1,14 +1,125 @@
-<div class="dashboard-page">
+<div class="dashboard-page" #dashboardContent>
   <div class="page-header">
     <div class="page-title">
-      <h1>CRM & Sales Dashboard</h1>
-      <p>Analyze sales performance, pipeline activity, and customer engagement</p>
+      <h1>CRM & Sales Management</h1>
+      <p>Complete sales performance overview and analytics</p>
     </div>
 
-    <app-page-filters></app-page-filters>
+    <div class="page-header-right" data-html2canvas-ignore="true">
+      <div class="period-group">
+        <button>Last 30 Days</button>
+        <button class="active">Last 6 Months</button>
+        <button>Year to Date</button>
+      </div>
+
+      <div class="header-divider"></div>
+
+      <button class="header-action-btn">
+        <span class="material-symbols-outlined btn-icon">filter_alt</span>
+        <span>Filters</span>
+      </button>
+
+      <div class="export-wrapper">
+        <button class="header-export-btn" (click)="toggleExportMenu()">
+          <span class="material-symbols-outlined btn-icon">download</span>
+          <span>Export</span>
+        </button>
+
+        @if (isExportMenuOpen) {
+          <div class="export-menu" data-html2canvas-ignore="true">
+            <button (click)="exportAsPDF()">Export as PDF</button>
+            <button (click)="exportAsExcel()">Export as Excel</button>
+            <button (click)="exportAsCSV()">Export as CSV</button>
+          </div>
+        }
+      </div>
+    </div>
   </div>
 
-  <div class="page-content-box">
-    crm sales works!
+  <div class="kpi-grid">
+    @for (item of kpis; track item.title) {
+      <app-kpi-card
+        [title]="item.title"
+        [value]="item.value"
+        [trend]="item.trend"
+        [icon]="item.icon"
+        [trendType]="item.trendType">
+      </app-kpi-card>
+    }
+  </div>
+
+  <app-section-title title="Sales Performance"></app-section-title>
+
+  <div class="two-cols">
+    <div class="chart-card">
+      <canvas
+        baseChart
+        [data]="revenueChartData"
+        [type]="revenueChartType">
+      </canvas>
+    </div>
+
+    <div class="card">
+      <h3>Top Sales Representatives</h3>
+      @for (item of topSales; track item.name) {
+        <div class="list-row">
+          <span>{{ item.name }}</span>
+          <strong>{{ item.amount }}</strong>
+        </div>
+      }
+    </div>
+  </div>
+
+  <app-section-title title="Sales Pipeline"></app-section-title>
+
+  <div class="two-cols">
+    <div class="chart-card">
+      <canvas
+        baseChart
+        [data]="pipelineChartData"
+        [type]="pipelineChartType">
+      </canvas>
+    </div>
+
+    <div class="card">
+      <h3>High-Value Deals</h3>
+      <p>Static example</p>
+    </div>
+  </div>
+
+  <app-section-title title="Orders & Invoices"></app-section-title>
+
+  <table>
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>Customer</th>
+      <th>Date</th>
+      <th>Amount</th>
+      <th>Status</th>
+    </tr>
+    </thead>
+
+    <tbody>
+      @for (item of salesOrders; track item.id) {
+        <tr>
+          <td>{{ item.id }}</td>
+          <td>{{ item.customer }}</td>
+          <td>{{ item.date }}</td>
+          <td>{{ item.amount }}</td>
+          <td>{{ item.status }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <app-section-title title="Customer Analytics"></app-section-title>
+
+  <div class="chart-card">
+    <canvas
+      baseChart
+      [data]="retentionChartData"
+      [type]="retentionChartType">
+    </canvas>
   </div>
 </div>
