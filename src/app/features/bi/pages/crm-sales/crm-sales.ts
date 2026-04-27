@@ -1,332 +1,332 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import {
+  Component, ElementRef, OnInit, OnDestroy,
+  ViewChild, inject, signal, computed
+} from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { Subject, forkJoin } from 'rxjs';
+import { takeUntil, finalize } from 'rxjs/operators';
+import { CommonModule } from '@angular/common';
 
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
 import { SectionTitleComponent } from '../../components/section-title/section-title';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
+import { SalesService } from '../../services/sales.service';
+import { SalesKpiResponse } from '../../models/sales-kpi-response';
+
+// ─── Interfaces ──────────────────────────────────────────────────────────────
+
+interface KpiCard {
+  title: string;
+  value: string;
+  trend: string;
+  icon: string;
+  trendType: 'positive' | 'negative';
+}
+
+interface RegionalConversion {
+  region: string;
+  value: string;
+  trend: string;
+  progress: number;
+  trendType: 'positive' | 'negative';
+}
+
+interface TopSale {
+  name: string;
+  amount: string;
+}
+
+interface SalesOrder {
+  id: string;
+  customer: string;
+  date: string;
+  amount: string;
+  status: string;
+}
+
+interface HighValueDeal {
+  name: string;
+  value: string;
+}
+
+// ─── Constantes ──────────────────────────────────────────────────────────────
+
+const REGIONAL_CONVERSIONS: RegionalConversion[] = [
+  { region: 'North America', value: '24.5%', trend: '+1.2%', progress: 78, trendType: 'positive' },
+  { region: 'Europe / EMEA',  value: '18.2%', trend: '+0.5%', progress: 58, trendType: 'positive' },
+  { region: 'Asia Pacific',   value: '21.8%', trend: '-2.1%', progress: 66, trendType: 'negative' },
+  { region: 'Latin America',  value: '14.9%', trend: '+3.4%', progress: 46, trendType: 'positive' },
+];
+
+const CHART_DEFAULTS = {
+  primaryColor:   '#5b61f6',
+  secondaryColor: '#c9c5f7',
+  amberColor:     '#f59e0b',
+  greenColor:     '#10b981',
+  greenAlpha:     'rgba(16,185,129,0.2)',
+} as const;
+
+// ─── Composant ───────────────────────────────────────────────────────────────
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-crm-sales',
-  imports: [PageFilters, SectionTitleComponent, KpiCardComponent, BaseChartDirective],
+  standalone: true,
+  imports: [PageFilters, SectionTitleComponent, KpiCardComponent, BaseChartDirective, CommonModule],
   templateUrl: './crm-sales.html',
   styleUrl: './crm-sales.css',
 })
-export class CrmSalesComponent {
+export class CrmSalesComponent implements OnInit, OnDestroy {
+
+  // ── Refs & DI ──────────────────────────────────────────────────────────────
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  private readonly salesService = inject(SalesService);
+  private readonly destroy$ = new Subject<void>();
 
+  // ── State ──────────────────────────────────────────────────────────────────
+  selectedPeriod: '30days' | '6months' | 'ytd' = '6months';
+  startDate = '';
+  endDate = '';
   isExportMenuOpen = false;
+  isLoading = false;
 
-  kpis = [
-    {
-      title: 'Total Revenue',
-      value: '$4,820,500',
-      trend: '+12.5%',
-      icon: '💲',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Number of Deals',
-      value: '248',
-      trend: '+18%',
-      icon: '📦',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Win Rate',
-      value: '64.2%',
-      trend: '+4.1%',
-      icon: '🎯',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Avg Deal Value',
-      value: '$19,437',
-      trend: '-2.4%',
-      icon: '📊',
-      trendType: 'negative' as const,
-    },
-    {
-      title: 'Sales Orders',
-      value: '1,420',
-      trend: '+5.2%',
-      icon: '🛒',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Receivables',
-      value: '$342,100',
-      trend: '-1.2%',
-      icon: '💰',
-      trendType: 'negative' as const,
-    },
-    {
-      title: 'Active Customers',
-      value: '842',
-      trend: '+42',
-      icon: '👤',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Inactive Customers',
-      value: '156',
-      trend: '-12',
-      icon: '👥',
-      trendType: 'negative' as const,
-    },
-    {
-      title: 'Avg Customer Value',
-      value: '$5,725',
-      trend: '+0.8%',
-      icon: '📈',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Retention Rate',
-      value: '94.8%',
-      trend: '+1.5%',
-      icon: '🔁',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Pipeline Deals',
-      value: '121',
-      trend: '+8',
-      icon: '📊',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Pipeline Value',
-      value: '$2.84M',
-      trend: '+15%',
-      icon: '📈',
-      trendType: 'positive' as const,
-    },
-    {
-      title: 'Conversion Rate',
-      value: '18.4%',
-      trend: '-0.5%',
-      icon: '%',
-      trendType: 'negative' as const,
-    },
-  ];
+  // ── Data ───────────────────────────────────────────────────────────────────
+  kpis: KpiCard[] = [];
+  topSales: TopSale[] = [];
+  salesOrders: SalesOrder[] = [];
+  highValueDeals: HighValueDeal[] = [];
+  readonly regionalConversions: RegionalConversion[] = REGIONAL_CONVERSIONS;
 
-  salesOrders = [
-    {
-      id: 'SO-84920',
-      customer: 'BlueHorizon',
-      date: '2023-11-24',
-      amount: '$42,500',
-      status: 'Paid',
-    },
-    {
-      id: 'SO-84921',
-      customer: 'Nexa Systems',
-      date: '2023-11-24',
-      amount: '$18,200',
-      status: 'Pending',
-    },
-    {
-      id: 'SO-84922',
-      customer: 'Vertex Media',
-      date: '2023-11-23',
-      amount: '$6,800',
-      status: 'Paid',
-    },
-    {
-      id: 'SO-84923',
-      customer: 'Kinetico Ltd',
-      date: '2023-11-23',
-      amount: '$124,000',
-      status: 'Overdue',
-    },
-    {
-      id: 'SO-84924',
-      customer: 'Skyline Ventures',
-      date: '2023-11-22',
-      amount: '$31,450',
-      status: 'Paid',
-    },
-  ];
-
-  topSales = [
-    { name: 'Sarah Jenkins', amount: '$1.2M' },
-    { name: 'David Chen', amount: '$980K' },
-    { name: 'Elena Rodriguez', amount: '$840K' },
-  ];
-
-  highValueDeals = [
-    {
-      opportunity: 'Acme Corp Expansion',
-      value: '$450,000',
-      stage: 'Negotiation',
-      confidence: '85%',
-    },
-    {
-      opportunity: 'Global Logistics SaaS',
-      value: '$280,000',
-      stage: 'Proposal',
-      confidence: '60%',
-    },
-    {
-      opportunity: 'TechFlow Infrastructure',
-      value: '$195,000',
-      stage: 'Closing',
-      confidence: '95%',
-    },
-    {
-      opportunity: 'Summit Health CRM',
-      value: '$150,000',
-      stage: 'Negotiation',
-      confidence: '75%',
-    },
-    { opportunity: 'Omni Retail POS', value: '$120,000', stage: 'Discovery', confidence: '40%' },
-  ];
-
-  regionalConversions = [
-    {
-      region: 'North America',
-      value: '24.5%',
-      trend: '+1.2%',
-      progress: 78,
-      trendType: 'positive' as const,
-    },
-    {
-      region: 'Europe / EMEA',
-      value: '18.2%',
-      trend: '+0.5%',
-      progress: 58,
-      trendType: 'positive' as const,
-    },
-    {
-      region: 'Asia Pacific',
-      value: '21.8%',
-      trend: '-2.1%',
-      progress: 66,
-      trendType: 'negative' as const,
-    },
-    {
-      region: 'Latin America',
-      value: '14.9%',
-      trend: '+3.4%',
-      progress: 46,
-      trendType: 'positive' as const,
-    },
-  ];
-
-  commonChartOptions: ChartConfiguration['options'] = {
+  // ── Chart configs ──────────────────────────────────────────────────────────
+  readonly commonChartOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-      },
-    },
+    plugins: { legend: { display: true, position: 'top' } },
     scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        beginAtZero: true,
-      },
+      x: { grid: { display: false } },
+      y: { beginAtZero: true },
     },
   };
 
-  simpleBarOptions: ChartConfiguration['options'] = {
+  readonly simpleBarOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
     indexAxis: 'y',
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
+    plugins: { legend: { display: false } },
     scales: {
-      x: {
-        beginAtZero: true,
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        grid: {
-          display: false,
-        },
-      },
+      x: { beginAtZero: true, grid: { display: false } },
+      y: { grid: { display: false } },
     },
   };
 
-  lineOptions: ChartConfiguration['options'] = {
+  readonly lineOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
+    plugins: { legend: { display: false } },
     scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        beginAtZero: false,
-      },
+      x: { grid: { display: false } },
+      y: { beginAtZero: false },
     },
   };
 
-  revenueChartType: 'bar' = 'bar';
-  revenueChartData: ChartData<'bar'> = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        data: [450, 520, 480, 610, 590, 720],
-        label: 'Actual',
-        backgroundColor: '#5b61f6',
-      },
-      {
-        data: [420, 450, 460, 490, 520, 560],
-        label: 'Target',
-        backgroundColor: '#c9c5f7',
-      },
-    ],
+  readonly revenueByProductChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: { legend: { display: false } },
   };
 
-  pipelineChartType: 'bar' = 'bar';
-  pipelineChartData: ChartData<'bar'> = {
-    labels: ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Closing'],
-    datasets: [
-      {
-        data: [100, 70, 50, 30, 15],
-        label: 'Deals',
-        backgroundColor: '#f59e0b',
-      },
-    ],
-  };
+  // ── Chart data (initialisé vide — rempli par les loaders) ──────────────────
+  revenueChartType:         'bar'  = 'bar';
+  pipelineChartType:        'bar'  = 'bar';
+  retentionChartType:       'line' = 'line';
+  revenueByProductChartType:'bar'  = 'bar';
 
-  retentionChartType: 'line' = 'line';
-  retentionChartData: ChartData<'line'> = {
-    labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        data: [92, 94, 91, 95, 93, 96],
-        label: 'Retention',
+  revenueChartData: ChartData<'bar'> = this.emptyBarData('Revenue');
+  pipelineChartData: ChartData<'bar'> = this.emptyBarData('Pipeline Deals', CHART_DEFAULTS.amberColor);
+  retentionChartData: ChartData<'line'> = this.emptyLineData();
+  revenueByProductChartData: ChartData<'bar'> = this.emptyBarData('Revenue by Product');
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.updateDateRange(this.selectedPeriod);
+    this.reloadAll();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ── Période ────────────────────────────────────────────────────────────────
+
+  setPeriod(period: '30days' | '6months' | 'ytd'): void {
+    this.selectedPeriod = period;
+    this.updateDateRange(period);
+    this.reloadAll();
+  }
+
+  // ── Reload central ─────────────────────────────────────────────────────────
+
+  /**
+   * Centralise tous les appels dépendants de la période.
+   * Les appels indépendants (retention, highValueDeals) sont lancés en parallèle.
+   */
+  private reloadAll(): void {
+    this.isLoading = true;
+
+    forkJoin({
+      kpis:           this.salesService.getSalesKpis(this.startDate, this.endDate),
+      revenueTrend:   this.salesService.getRevenueTrend(this.startDate, this.endDate),
+      pipeline:       this.salesService.getPipelineDistribution(),
+      topSales:       this.salesService.getTopSalespersons(this.startDate, this.endDate),
+      revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate),
+      orders:         this.salesService.getRecentOrders(this.startDate, this.endDate),
+      retention:      this.salesService.getCustomerRetention(),
+      highDeals:      this.salesService.getHighValueDeals(),
+    })
+    .pipe(
+      takeUntil(this.destroy$),
+      finalize(() => (this.isLoading = false)),
+    )
+    .subscribe({
+      next: (results) => {
+        this.applySalesKpis(results.kpis);
+        this.applyRevenueTrend(results.revenueTrend);
+        this.applyPipelineDistribution(results.pipeline);
+        this.applyTopSalespersons(results.topSales);
+        this.applyRevenueByProduct(results.revenueProduct);
+        this.applyRecentOrders(results.orders);
+        this.applyCustomerRetention(results.retention);
+        this.applyHighValueDeals(results.highDeals);
+      },
+      error: (err) => console.error('Erreur chargement dashboard sales :', err),
+    });
+  }
+
+  // ── Appliqueurs de données ─────────────────────────────────────────────────
+
+  private applySalesKpis(data: SalesKpiResponse): void {
+    const pos = 'positive' as const;
+    const neg = 'negative' as const;
+
+    this.kpis = [
+      { title: 'Total Revenue',           value: this.formatCurrency(data.totalRevenue),        trend: '', icon: 'payments',         trendType: pos },
+      { title: 'Number of Deals',         value: String(data.numberOfDeals),                    trend: '', icon: 'handshake',         trendType: pos },
+      { title: 'Win Rate',                value: `${this.formatNumber(data.winRate)}%`,          trend: '', icon: 'emoji_events',      trendType: pos },
+      { title: 'Avg Deal Value',          value: this.formatCurrency(data.averageDealValue),     trend: '', icon: 'monitoring',        trendType: pos },
+      { title: 'Sales Orders Count',      value: String(data.salesOrdersCount),                 trend: '', icon: 'shopping_cart',     trendType: pos },
+      { title: 'Outstanding Receivables', value: this.formatCurrency(data.outstandingReceivables), trend: '', icon: 'receipt_long',   trendType: neg },
+      { title: 'Active Customers',        value: String(data.activeCustomers),                  trend: '', icon: 'groups',            trendType: pos },
+      { title: 'Inactive Customers',      value: String(data.inactiveCustomers),                trend: '', icon: 'person_off',        trendType: neg },
+      { title: 'Avg Customer Value',      value: this.formatCurrency(data.averageCustomerValue),trend: '', icon: 'paid',              trendType: pos },
+      { title: 'Pipeline Deals',          value: String(data.pipelineDealsCount),               trend: '', icon: 'conversion_path',  trendType: pos },
+      { title: 'Pipeline Value',          value: this.formatCurrency(data.pipelineValue),       trend: '', icon: 'stacked_line_chart',trendType: pos },
+      { title: 'Conversion Rate',         value: `${this.formatNumber(data.conversionRate)}%`,  trend: '', icon: 'trending_up',       trendType: pos },
+    ];
+  }
+
+  private applyRevenueTrend(data: { label: string; value: number }[]): void {
+    this.revenueChartData = {
+      labels: data.map(i => i.label),
+      datasets: [{ data: data.map(i => i.value), label: 'Revenue' }],
+    };
+  }
+
+  private applyPipelineDistribution(data: { label: string; value: number }[]): void {
+    this.pipelineChartData = {
+      labels: data.map(i => i.label),
+      datasets: [{ data: data.map(i => i.value), label: 'Pipeline Deals' }],
+    };
+  }
+
+  private applyTopSalespersons(data: { name: string; amount: number }[]): void {
+    this.topSales = data.map(i => ({ name: i.name, amount: this.formatCurrency(i.amount) }));
+  }
+
+  private applyRecentOrders(data: { id: string; customer: string; date: string; amount: number; status: string }[]): void {
+    this.salesOrders = data.map(i => ({
+      id:       i.id,
+      customer: i.customer,
+      date:     i.date,
+      amount:   this.formatCurrency(i.amount),
+      status:   i.status,
+    }));
+  }
+
+  private applyRevenueByProduct(data: { name: string; amount: number }[]): void {
+    this.revenueByProductChartData = {
+      labels: data.map(i => i.name),
+      datasets: [{ data: data.map(i => i.amount), backgroundColor: CHART_DEFAULTS.primaryColor }],
+    };
+  }
+
+  private applyCustomerRetention(data: { label: string; value: number }[]): void {
+    this.retentionChartData = {
+      labels: data.map(i => i.label),
+      datasets: [{
+        data: data.map(i => i.value),
+        label: 'Customer Retention Rate',
         fill: true,
         tension: 0.4,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16,185,129,0.2)',
-      },
-    ],
-  };
+        borderColor: CHART_DEFAULTS.greenColor,
+        backgroundColor: CHART_DEFAULTS.greenAlpha,
+      }],
+    };
+  }
+
+  private applyHighValueDeals(data: { name: string; value: number }[]): void {
+    this.highValueDeals = data.map(i => ({ name: i.name, value: this.formatCurrency(i.value) }));
+  }
+
+  // ── Utilitaires de date ────────────────────────────────────────────────────
+
+  private updateDateRange(period: '30days' | '6months' | 'ytd'): void {
+    const today = new Date();
+    let start: Date;
+
+    switch (period) {
+      case '30days':  start = new Date(today); start.setDate(today.getDate() - 30);     break;
+      case '6months': start = new Date(today); start.setMonth(today.getMonth() - 6);    break;
+      case 'ytd':     start = new Date(today.getFullYear(), 0, 1);                       break;
+    }
+
+    this.startDate = this.toIsoDate(start);
+    this.endDate   = this.toIsoDate(today);
+  }
+
+  private toIsoDate(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+
+  // ── Formatage ──────────────────────────────────────────────────────────────
+
+  formatCurrency(value: number | null | undefined): string {
+    const n = value ?? 0;
+    if (n >= 1e9) return `${this.toShort(n / 1e9)} B DT`;
+    if (n >= 1e6) return `${this.toShort(n / 1e6)} M DT`;
+    if (n >= 1e3) return `${this.toShort(n / 1e3)} K DT`;
+    return `${this.toShort(n)} DT`;
+  }
+
+  private toShort(value: number): string {
+    return value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+  }
+
+  formatNumber(value: number | null | undefined): string {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value ?? 0);
+  }
+
+  // ── Export ─────────────────────────────────────────────────────────────────
 
   toggleExportMenu(): void {
     this.isExportMenuOpen = !this.isExportMenuOpen;
@@ -337,8 +337,7 @@ export class CrmSalesComponent {
     if (!element) return;
 
     this.isExportMenuOpen = false;
-
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    await new Promise(r => setTimeout(r, 150));
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -346,26 +345,24 @@ export class CrmSalesComponent {
       backgroundColor: '#f5f7fb',
     });
 
+    const pdf       = new jsPDF('p', 'mm', 'a4');
+    const pageW     = pdf.internal.pageSize.getWidth();
+    const pageH     = pdf.internal.pageSize.getHeight();
+    const imgW      = pageW;
+    const imgH      = (canvas.height * imgW) / canvas.width;
     const imageData = canvas.toDataURL('image/png');
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+    let remaining = imgH;
+    let pos       = 0;
 
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    pdf.addImage(imageData, 'PNG', 0, pos, imgW, imgH);
+    remaining -= pageH;
 
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
+    while (remaining > 0) {
+      pos = remaining - imgH;
       pdf.addPage();
-      pdf.addImage(imageData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      pdf.addImage(imageData, 'PNG', 0, pos, imgW, imgH);
+      remaining -= pageH;
     }
 
     pdf.save('crm-sales-dashboard.pdf');
@@ -373,67 +370,54 @@ export class CrmSalesComponent {
 
   exportAsExcel(): void {
     this.isExportMenuOpen = false;
-
-    const rows = this.buildExportRows();
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'CRM Sales');
-    XLSX.writeFile(workbook, 'crm-sales-data.xlsx');
+    this.downloadWorkbook('crm-sales-data.xlsx', 'xlsx');
   }
 
   exportAsCSV(): void {
     this.isExportMenuOpen = false;
 
-    const rows = this.buildExportRows();
-    const worksheet = XLSX.utils.json_to_sheet(rows);
-    const csv = XLSX.utils.sheet_to_csv(worksheet);
+    const ws  = XLSX.utils.json_to_sheet(this.buildExportRows());
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a   = Object.assign(document.createElement('a'), { href: url, download: 'crm-sales-data.csv' });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'crm-sales-data.csv');
-    link.click();
-
+    a.click();
     URL.revokeObjectURL(url);
   }
 
-  private buildExportRows(): any[] {
+  private downloadWorkbook(filename: string, format: 'xlsx'): void {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(this.buildExportRows()), 'CRM Sales');
+    XLSX.writeFile(wb, filename);
+  }
+
+  private buildExportRows(): object[] {
     return [
-      ...this.kpis.map((item) => ({
-        section: 'KPIs',
-        title: item.title,
-        value: item.value,
-        trend: item.trend,
-      })),
-      ...this.topSales.map((item) => ({
-        section: 'Top Sales Representatives',
-        name: item.name,
-        amount: item.amount,
-      })),
-      ...this.highValueDeals.map((item) => ({
-        section: 'High Value Deals',
-        opportunity: item.opportunity,
-        value: item.value,
-        stage: item.stage,
-        confidence: item.confidence,
-      })),
-      ...this.salesOrders.map((item) => ({
-        section: 'Orders and Invoices',
-        id: item.id,
-        customer: item.customer,
-        date: item.date,
-        amount: item.amount,
-        status: item.status,
-      })),
-      ...this.regionalConversions.map((item) => ({
-        section: 'Regional Conversion Rates',
-        region: item.region,
-        value: item.value,
-        trend: item.trend,
-      })),
+      ...this.kpis.map(i => ({ section: 'KPIs', title: i.title, value: i.value, trend: i.trend })),
+      ...this.topSales.map(i => ({ section: 'Top Sales Representatives', name: i.name, amount: i.amount })),
+      ...this.highValueDeals.map(i => ({ section: 'High Value Deals', name: i.name, value: i.value })),
+      ...this.salesOrders.map(i => ({ section: 'Orders and Invoices', ...i })),
+      ...this.regionalConversions.map(i => ({ section: 'Regional Conversion Rates', region: i.region, value: i.value, trend: i.trend })),
     ];
+  }
+
+  // ── Helpers charts ─────────────────────────────────────────────────────────
+
+  private emptyBarData(label: string, color : string = CHART_DEFAULTS.primaryColor): ChartData<'bar'> {
+    return { labels: [], datasets: [{ data: [], label, backgroundColor: color }] };
+  }
+
+  private emptyLineData(): ChartData<'line'> {
+    return {
+      labels: [],
+      datasets: [{
+        data: [],
+        label: 'Customer Retention Rate',
+        fill: true,
+        tension: 0.4,
+        borderColor: CHART_DEFAULTS.greenColor,
+        backgroundColor: CHART_DEFAULTS.greenAlpha,
+      }],
+    };
   }
 }

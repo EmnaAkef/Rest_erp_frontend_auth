@@ -1,9 +1,17 @@
 <div class="kpi-card">
   <div class="kpi-top">
-    <div class="icon-box">{{ icon }}</div>
-    <div class="trend" [class.positive]="trendType === 'positive'" [class.negative]="trendType === 'negative'">
-      {{ trend }}
+    <div class="icon-box">
+      <span class="material-symbols-outlined">{{ icon }}</span>
     </div>
+
+    @if (trend) {
+      <div
+        class="trend"
+        [class.positive]="trendType === 'positive'"
+        [class.negative]="trendType === 'negative'">
+        {{ trend }}
+      </div>
+    }
   </div>
 
   <div class="kpi-title">{{ title }}</div>
