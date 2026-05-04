@@ -6,6 +6,9 @@ import {
   FinanceKpiResponse,
   FinanceRevenueProfitTrendItem,
   FinanceCashFlowTrendItem,
+  FinanceOutstandingInvoiceItem,
+  FinanceLiabilityAssetItem,
+  FinanceAssetDistributionItem,
 } from '../models/finance-kpi-response';
 @Injectable({
   providedIn: 'root',
@@ -34,5 +37,31 @@ export class FinanceKpiService {
     const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
 
     return this.http.get<FinanceCashFlowTrendItem[]>(`${this.apiUrl}/cash-flow-trend`, { params });
+  }
+  getTopOutstandingInvoices(
+    startDate: string,
+    endDate: string,
+  ): Observable<FinanceOutstandingInvoiceItem[]> {
+    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
+
+    return this.http.get<FinanceOutstandingInvoiceItem[]>(
+      `${this.apiUrl}/top-outstanding-invoices`,
+      { params },
+    );
+  }
+  getLiabilityVsAssets(startDate: string, endDate: string): Observable<FinanceLiabilityAssetItem> {
+    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
+
+    return this.http.get<FinanceLiabilityAssetItem>(`${this.apiUrl}/liability-vs-assets`, {
+      params,
+    });
+  }
+
+  getAssetDistribution(endDate: string): Observable<FinanceAssetDistributionItem[]> {
+    const params = new HttpParams().set('endDate', endDate);
+
+    return this.http.get<FinanceAssetDistributionItem[]>(`${this.apiUrl}/asset-distribution`, {
+      params,
+    });
   }
 }

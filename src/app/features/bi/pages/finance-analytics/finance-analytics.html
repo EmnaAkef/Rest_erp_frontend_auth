@@ -212,12 +212,12 @@
           <div class="summary-pairs">
             <div class="summary-box">
               <span>Total Liabilities</span>
-              <strong>$5.7M</strong>
+              <strong>{{ totalLiabilitiesDisplay }}</strong>
             </div>
 
             <div class="summary-box">
               <span>Asset Value</span>
-              <strong>$10.7M</strong>
+              <strong>{{ assetValueDisplay }}</strong>
             </div>
           </div>
         </div>
@@ -247,23 +247,20 @@
 
       <div class="compliance-card">
         <div class="compliance-header">
-          <span class="shield-icon">◔</span>
-          <strong>Compliance Status: Full Compliance</strong>
+          <span class="shield-icon">{{ complianceStatusIcon }}</span>
+          <strong>Compliance Status: {{ complianceStatus }}</strong>
         </div>
 
         <div class="compliance-content">
           <div class="compliance-block">
             <h4>Next Filing Dates</h4>
 
-            <div class="compliance-row">
-              <span>Quarterly VAT Return</span>
-              <strong>Nov 15, 2024</strong>
-            </div>
-
-            <div class="compliance-row">
-              <span>Income Tax Provisional</span>
-              <strong>Oct 31, 2024</strong>
-            </div>
+            @for (item of nextFilingDates; track item.label) {
+              <div class="compliance-row">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.date }}</strong>
+              </div>
+            }
           </div>
 
           <div class="compliance-block">
@@ -304,22 +301,18 @@
         </div>
 
         <div class="asset-legend">
-          <div class="legend-row">
-            <span class="dot dot-dark"></span>
-            <span>Fixed Assets</span>
-            <strong>$4.5M</strong>
-          </div>
-
-          <div class="legend-row">
-            <span class="dot dot-light"></span>
-            <span>Current Assets</span>
-            <strong>$1.2M</strong>
-          </div>
+          @for (item of assetDistributionLegend; track item.label) {
+            <div class="legend-row">
+              <span class="dot dot-dark"></span>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+            </div>
+          }
         </div>
 
         <div class="depreciation-box">
           <span>↗ Depreciation Expense</span>
-          <strong>$124,500</strong>
+          <strong>{{ depreciationExpenseDisplay }}</strong>
         </div>
       </div>
     </section>

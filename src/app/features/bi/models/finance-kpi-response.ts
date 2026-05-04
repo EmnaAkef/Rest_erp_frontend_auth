@@ -32,3 +32,23 @@ export interface FinanceCashFlowTrendItem {
   outflow: number;
   netCashFlow: number;
 }
+export interface FinanceOutstandingInvoiceItem {
+  client: string;
+  reference: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+}
+export interface FinanceLiabilityAssetItem {
+  currentAssets: number;
+  fixedAssets: number;
+  totalAssets: number;
+
+  currentLiabilities: number;
+  longTermLiabilities: number;
+  totalLiabilities: number;
+}
+export interface FinanceAssetDistributionItem {
+  assetType: string;
+  assetValue: number;
+}

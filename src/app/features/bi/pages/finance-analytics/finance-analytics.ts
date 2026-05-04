@@ -10,6 +10,9 @@ import {
   FinanceKpiResponse,
   FinanceRevenueProfitTrendItem,
   FinanceCashFlowTrendItem,
+  FinanceOutstandingInvoiceItem,
+  FinanceLiabilityAssetItem,
+  FinanceAssetDistributionItem,
 } from '../../models/finance-kpi-response';
 
 Chart.register(...registerables);
@@ -45,6 +48,27 @@ export class FinanceAnalyticsComponent implements OnInit {
   startDate = '';
   endDate = '';
 
+  totalLiabilitiesDisplay = '$0';
+  assetValueDisplay = '$0';
+
+  assetDistributionLegend: {
+    label: string;
+    value: string;
+  }[] = [];
+  depreciationExpenseDisplay = '$0';
+  complianceStatus = 'Full Compliance';
+  complianceStatusIcon = '◔';
+
+  nextFilingDates = [
+    {
+      label: 'Quarterly VAT Return',
+      date: 'Nov 15, 2024',
+    },
+    {
+      label: 'Income Tax Provisional',
+      date: 'Oct 31, 2024',
+    },
+  ];
   constructor(private financeKpiService: FinanceKpiService) {}
 
   ngOnInit(): void {
@@ -174,43 +198,13 @@ export class FinanceAnalyticsComponent implements OnInit {
     },
   ];
 
-  outstandingInvoices = [
-    {
-      client: 'Acme Global Tech',
-      reference: 'INV-2024-001',
-      amount: '$45,200',
-      dueDate: 'Oct 24, 2024',
-      status: 'Overdue',
-    },
-    {
-      client: 'Starlight Systems',
-      reference: 'INV-2024-005',
-      amount: '$12,800',
-      dueDate: 'Oct 28, 2024',
-      status: 'Pending',
-    },
-    {
-      client: 'Nebula Corp',
-      reference: 'INV-2024-009',
-      amount: '$28,500',
-      dueDate: 'Nov 02, 2024',
-      status: 'Due Soon',
-    },
-    {
-      client: 'Zenith Services',
-      reference: 'INV-2024-012',
-      amount: '$9,100',
-      dueDate: 'Nov 05, 2024',
-      status: 'Paid',
-    },
-    {
-      client: 'Prime Logistics',
-      reference: 'INV-2024-015',
-      amount: '$5,300',
-      dueDate: 'Nov 12, 2024',
-      status: 'Pending',
-    },
-  ];
+  outstandingInvoices: {
+    client: string;
+    reference: string;
+    amount: string;
+    dueDate: string;
+    status: string;
+  }[] = [];
 
   taxPayments = [
     {
@@ -359,6 +353,9 @@ export class FinanceAnalyticsComponent implements OnInit {
     this.loadFinanceKpis();
     this.loadRevenueProfitTrend();
     this.loadCashFlowTrend();
+    this.loadTopOutstandingInvoices();
+    this.loadLiabilityVsAssets();
+    this.loadAssetDistribution();
   }
   private loadFinanceKpis(): void {
     this.loadingKpis = true;
@@ -503,6 +500,8 @@ export class FinanceAnalyticsComponent implements OnInit {
         highlight: true,
       },
     ];
+    this.depreciationExpenseDisplay = this.formatCurrency(data.depreciationExpense);
+    this.updateComplianceStatus(data);
   }
 
   private formatDate(date: Date): string {
@@ -725,6 +724,157 @@ export class FinanceAnalyticsComponent implements OnInit {
         },
       ],
     };
+  }
+  private loadTopOutstandingInvoices(): void {
+    this.financeKpiService.getTopOutstandingInvoices(this.startDate, this.endDate).subscribe({
+      next: (data) => {
+        this.applyTopOutstandingInvoices(data);
+      },
+      error: (error) => {
+        console.error('Erreur chargement Top Outstanding Invoices:', error);
+      },
+    });
+  }
+
+  private applyTopOutstandingInvoices(data: FinanceOutstandingInvoiceItem[]): void {
+    this.outstandingInvoices = data.map((item) => ({
+      client: item.client,
+      reference: item.reference,
+      amount: this.formatCurrency(item.amount),
+      dueDate: this.formatDisplayDate(item.dueDate),
+      status: this.normalizeInvoiceStatus(item.status),
+    }));
+  }
+
+  private formatDisplayDate(dateValue: string | null | undefined): string {
+    if (!dateValue) {
+      return '-';
+    }
+
+    const date = new Date(dateValue);
+
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    }).format(date);
+  }
+
+  private normalizeInvoiceStatus(status: string): string {
+    switch (status) {
+      case 'Overdue':
+        return 'Overdue';
+      case 'Due Soon':
+        return 'Due Soon';
+      case 'UNPAID':
+      case 'WAITING':
+      case 'ACCEPTED':
+      case 'PARTIALLY_PAID':
+        return 'Pending';
+      case 'PAID':
+        return 'Paid';
+      default:
+        return status;
+    }
+  }
+  private loadLiabilityVsAssets(): void {
+    this.financeKpiService.getLiabilityVsAssets(this.startDate, this.endDate).subscribe({
+      next: (data) => {
+        this.applyLiabilityVsAssets(data);
+      },
+      error: (error) => {
+        console.error('Erreur chargement Liability vs Assets:', error);
+      },
+    });
+  }
+
+  private applyLiabilityVsAssets(data: FinanceLiabilityAssetItem): void {
+    this.liabilityAssetsChartData = {
+      labels: ['Current', 'Fixed / Long Term', 'Total'],
+      datasets: [
+        {
+          data: [
+            this.toMillions(data.currentAssets),
+            this.toMillions(data.fixedAssets),
+            this.toMillions(data.totalAssets),
+          ],
+          label: 'Total Asset Value',
+          backgroundColor: '#f6b04f',
+        },
+        {
+          data: [
+            this.toMillions(data.currentLiabilities),
+            this.toMillions(data.longTermLiabilities),
+            this.toMillions(data.totalLiabilities),
+          ],
+          label: 'Total Liabilities',
+          backgroundColor: '#f3c98c',
+        },
+      ],
+    };
+
+    this.totalLiabilitiesDisplay = this.formatCompactCurrency(data.totalLiabilities);
+    this.assetValueDisplay = this.formatCompactCurrency(data.totalAssets);
+  }
+  private toMillions(value: number | null | undefined): number {
+    return Number(((value ?? 0) / 1_000_000).toFixed(2));
+  }
+
+  private formatCompactCurrency(value: number | null | undefined): string {
+    const safeValue = value ?? 0;
+
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(safeValue);
+  }
+
+  private loadAssetDistribution(): void {
+    this.financeKpiService.getAssetDistribution(this.endDate).subscribe({
+      next: (data) => {
+        this.applyAssetDistribution(data);
+      },
+      error: (error) => {
+        console.error('Erreur chargement Asset Distribution:', error);
+      },
+    });
+  }
+
+  private applyAssetDistribution(data: FinanceAssetDistributionItem[]): void {
+    this.assetDistributionChartData = {
+      labels: data.map((item) => item.assetType),
+      datasets: [
+        {
+          data: data.map((item) => this.toMillions(item.assetValue)),
+          backgroundColor: ['#111827', '#cdd5df', '#5b61f6', '#f6b04f', '#c9c5f7', '#94a3b8'],
+          borderWidth: 0,
+        },
+      ],
+    };
+
+    this.assetDistributionLegend = data.map((item) => ({
+      label: item.assetType,
+      value: this.formatCompactCurrency(item.assetValue),
+    }));
+  }
+
+  private updateComplianceStatus(data: FinanceKpiResponse): void {
+    if (data.dueInvoices > 0) {
+      this.complianceStatus = 'Attention Required';
+      this.complianceStatusIcon = '!';
+      return;
+    }
+
+    if (data.vatPayable > 1000000) {
+      this.complianceStatus = 'Tax Review Needed';
+      this.complianceStatusIcon = '◷';
+      return;
+    }
+
+    this.complianceStatus = 'Full Compliance';
+    this.complianceStatusIcon = '◔';
   }
 }
 
