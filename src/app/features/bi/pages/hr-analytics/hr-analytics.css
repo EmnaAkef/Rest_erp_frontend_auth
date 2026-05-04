@@ -186,6 +186,12 @@
   border-radius: 20px;
   padding: 20px;
   box-sizing: border-box;
+  min-height: 360px;
+}
+
+.chart-card canvas {
+  width: 100% !important;
+  height: 280px !important;
 }
 
 .chart-header h3 {

@@ -7,10 +7,18 @@
 
     <div class="page-header-right" data-html2canvas-ignore="true">
       <div class="period-group">
-        <button>Last 30 Days</button>
-        <button class="active">Last 6 Months</button>
-        <button>Year to Date</button>
-      </div>
+  <button [class.active]="selectedPeriod === '30days'" (click)="setPeriod('30days')">
+  Last 30 Days
+</button>
+
+<button [class.active]="selectedPeriod === '6months'" (click)="setPeriod('6months')">
+  Last 6 Months
+</button>
+
+<button [class.active]="selectedPeriod === 'ytd'" (click)="setPeriod('ytd')">
+  Year to Date
+</button>
+</div>
 
       <div class="header-divider"></div>
 
@@ -89,6 +97,17 @@
     </div>
   </section>
 
+  <app-section-title title="Employees by Department"></app-section-title>
+
+<div class="chart-card">
+  <canvas
+    baseChart
+    [data]="employeesByDepartmentChartData"
+    [type]="employeesByDepartmentChartType"
+    [options]="employeesByDepartmentChartOptions">
+  </canvas>
+</div>
+
   <section class="dashboard-section">
     <app-section-title
       title="Attendance & Presence"
@@ -117,8 +136,8 @@
         <div class="chart-container">
           <canvas
             baseChart
-            [data]="attendanceChartData"
-            [type]="attendanceChartType"
+            [data]="attendanceTrendChartData"
+            [type]="attendanceTrendChartType"
             [options]="commonChartOptions">
           </canvas>
         </div>
@@ -139,11 +158,11 @@
           </tr>
           </thead>
           <tbody>
-            @for (item of birthdays; track item.name) {
+            @for (item of upcomingBirthdays; track item.employee) {
               <tr>
-                <td>{{ item.name }}</td>
+                <td>{{ item.employee }}</td>
                 <td>{{ item.department }}</td>
-                <td>{{ item.days }}</td>
+                <td>{{ item.remainingDays }}</td>
               </tr>
             }
           </tbody>
@@ -180,9 +199,9 @@
         <div class="chart-container">
           <canvas
             baseChart
-            [data]="salaryChartData"
-            [type]="salaryChartType"
-            [options]="commonChartOptions">
+            [data]="salaryBenchmarkChartData"
+            [type]="salaryBenchmarkChartType"
+            [options]="salaryBenchmarkChartOptions">
           </canvas>
         </div>
       </div>

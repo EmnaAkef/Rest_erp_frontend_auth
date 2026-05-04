@@ -11,4 +11,5 @@ export interface SalesKpiResponse {
   inactiveCustomers: number;
   averageCustomerValue: number;
   conversionRate: number;
+  currency: string;
 }
