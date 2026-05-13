@@ -187,11 +187,11 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     forkJoin({
       kpis:           this.salesService.getSalesKpis(this.startDate, this.endDate),
       revenueTrend:   this.salesService.getRevenueTrend(this.startDate, this.endDate),
-      pipeline:       this.salesService.getPipelineDistribution(),
+      pipeline:       this.salesService.getPipelineDistribution(this.startDate, this.endDate),
       topSales:       this.salesService.getTopSalespersons(this.startDate, this.endDate),
       revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate),
       orders:         this.salesService.getRecentOrders(this.startDate, this.endDate),
-      retention:      this.salesService.getCustomerRetention(),
+      retention: this.salesService.getCustomerRetention(this.startDate, this.endDate),
       highDeals:      this.salesService.getHighValueDeals(),
     })
     .pipe(
@@ -243,12 +243,18 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     };
   }
 
-  private applyPipelineDistribution(data: { label: string; value: number }[]): void {
-    this.pipelineChartData = {
-      labels: data.map(i => i.label),
-      datasets: [{ data: data.map(i => i.value), label: 'Pipeline Deals' }],
-    };
-  }
+ private applyPipelineDistribution(data: { status: string; count: number }[]): void {
+  this.pipelineChartData = {
+    labels: data.map((item) => item.status),
+    datasets: [
+      {
+        data: data.map((item) => Number(item.count ?? 0)),
+        label: 'Pipeline Deals',
+        backgroundColor: '#93c5fd',
+      },
+    ],
+  };
+}
 
   private applyTopSalespersons(data: { name: string; amount: number }[]): void {
     this.topSales = data.map(i => ({ name: i.name, amount: this.formatCurrency(i.amount) }));

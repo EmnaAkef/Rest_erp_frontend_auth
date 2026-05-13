@@ -36,8 +36,21 @@ export class SalesService {
   );
 }
 
-getPipelineDistribution() {
-  return this.http.get<any[]>('http://localhost:8080/api/bi/sales/pipeline');
+getPipelineDistribution(startDate?: string, endDate?: string) {
+  let params = new HttpParams();
+
+  if (startDate) {
+    params = params.set('startDate', startDate);
+  }
+
+  if (endDate) {
+    params = params.set('endDate', endDate);
+  }
+
+  return this.http.get<any[]>(
+    `${this.apiUrl}/pipeline-distribution`,
+    { params }
+  );
 }
 
 getRecentOrders(startDate?: string, endDate?: string) {
@@ -88,9 +101,20 @@ getRevenueByProduct(startDate?: string, endDate?: string) {
   );
 }
 
-getCustomerRetention() {
+getCustomerRetention(startDate?: string, endDate?: string) {
+  let params = new HttpParams();
+
+  if (startDate) {
+    params = params.set('startDate', startDate);
+  }
+
+  if (endDate) {
+    params = params.set('endDate', endDate);
+  }
+
   return this.http.get<any[]>(
-    'http://localhost:8080/api/bi/sales/customer-retention'
+    `${this.apiUrl}/customer-retention`,
+    { params }
   );
 }
 
