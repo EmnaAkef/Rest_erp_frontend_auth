@@ -2,7 +2,7 @@ import {
   Component, ElementRef, OnInit, OnDestroy,
   ViewChild, inject, signal, computed
 } from '@angular/core';
-import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
+import { Chart, registerables, ChartConfiguration, ChartData , ChartOptions, TooltipItem } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -10,11 +10,12 @@ import * as XLSX from 'xlsx';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
 import { SectionTitleComponent } from '../../components/section-title/section-title';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
-import { SalesService } from '../../services/sales.service';
+import { SalesService , SalesFilters, SalesFilterOption } from '../../services/sales.service';
 import { SalesKpiResponse } from '../../models/sales-kpi-response';
 import { BiFormatService } from '../../services/bi-format.service';
 
@@ -78,7 +79,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-crm-sales',
   standalone: true,
-  imports: [PageFilters, SectionTitleComponent, KpiCardComponent, BaseChartDirective, CommonModule],
+  imports: [PageFilters, SectionTitleComponent, KpiCardComponent, BaseChartDirective, CommonModule, FormsModule],
   templateUrl: './crm-sales.html',
   styleUrl: './crm-sales.css',
 })
@@ -97,6 +98,18 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   isLoading = false;
   private biFormat = inject(BiFormatService);
   currency = '';
+  // ── Sales filters ────────────────────────────────────────────────────────────
+  isSalesFilterPanelOpen = false;
+
+  selectedSalesFilters: SalesFilters = {};
+  draftSalesFilters: SalesFilters = {};
+
+  customerOptions: SalesFilterOption[] = [];
+  productOptions: SalesFilterOption[] = [];
+  salespersonOptions: SalesFilterOption[] = [];
+  workstatusOptions: SalesFilterOption[] = [];
+  customerCategoryOptions: SalesFilterOption[] = [];
+  productCategoryOptions: SalesFilterOption[] = [];
 
   // ── Data ───────────────────────────────────────────────────────────────────
   kpis: KpiCard[] = [];
@@ -137,12 +150,39 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     },
   };
 
-  readonly revenueByProductChartOptions: ChartConfiguration<'bar'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    indexAxis: 'y',
-    plugins: { legend: { display: false } },
-  };
+  readonly revenueByProductChartOptions: ChartOptions<'bar'> = {
+  indexAxis: 'y',
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+    tooltip: {
+      callbacks: {
+        label: (context) => {
+          const value = Number(context.raw || 0);
+          return `${value.toLocaleString('fr-FR')} ${this.currency}`;
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: {
+        callback: (value) => Number(value).toLocaleString('fr-FR'),
+      },
+      grid: {
+        color: 'rgba(148, 163, 184, 0.25)',
+      },
+    },
+    y: {
+      grid: {
+        display: false,
+      },
+    },
+  },
+};
 
   // ── Chart data (initialisé vide — rempli par les loaders) ──────────────────
   revenueChartType:         'bar'  = 'bar';
@@ -151,16 +191,17 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   revenueByProductChartType:'bar'  = 'bar';
 
   revenueChartData: ChartData<'bar'> = this.emptyBarData('Revenue');
-  pipelineChartData: ChartData<'bar'> = this.emptyBarData('Pipeline Deals', CHART_DEFAULTS.amberColor);
+  pipelineChartData: ChartData<'bar'> = this.emptyBarData('Pipeline Deals');
   retentionChartData: ChartData<'line'> = this.emptyLineData();
   revenueByProductChartData: ChartData<'bar'> = this.emptyBarData('Revenue by Product');
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-    this.updateDateRange(this.selectedPeriod);
-    this.reloadAll();
-  }
+  this.updateDateRange(this.selectedPeriod);
+  this.loadFilterOptions();
+  this.reloadAll();
+}
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -182,18 +223,20 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
    * Les appels indépendants (retention, highValueDeals) sont lancés en parallèle.
    */
   private reloadAll(): void {
-    this.isLoading = true;
+  this.isLoading = true;
 
-    forkJoin({
-      kpis:           this.salesService.getSalesKpis(this.startDate, this.endDate),
-      revenueTrend:   this.salesService.getRevenueTrend(this.startDate, this.endDate),
-      pipeline:       this.salesService.getPipelineDistribution(this.startDate, this.endDate),
-      topSales:       this.salesService.getTopSalespersons(this.startDate, this.endDate),
-      revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate),
-      orders:         this.salesService.getRecentOrders(this.startDate, this.endDate),
-      retention: this.salesService.getCustomerRetention(this.startDate, this.endDate),
-      highDeals:      this.salesService.getHighValueDeals(),
-    })
+  const filters = this.selectedSalesFilters;
+
+  forkJoin({
+    kpis: this.salesService.getSalesKpis(this.startDate, this.endDate, filters),
+    revenueTrend: this.salesService.getRevenueTrend(this.startDate, this.endDate, filters),
+    pipeline: this.salesService.getPipelineDistribution(this.startDate, this.endDate, filters),
+    topSales: this.salesService.getTopSalespersons(this.startDate, this.endDate, filters),
+    revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate, filters),
+    orders: this.salesService.getRecentOrders(this.startDate, this.endDate, filters),
+    retention: this.salesService.getCustomerRetention(this.startDate, this.endDate, filters),
+    highDeals: this.salesService.getHighValueDeals(this.startDate, this.endDate, filters),
+  })
     .pipe(
       takeUntil(this.destroy$),
       finalize(() => (this.isLoading = false)),
@@ -201,6 +244,7 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     .subscribe({
       next: (results) => {
         this.currency = results.kpis.currency || '';
+
         this.applySalesKpis(results.kpis);
         this.applyRevenueTrend(results.revenueTrend);
         this.applyPipelineDistribution(results.pipeline);
@@ -212,7 +256,89 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.error('Erreur chargement dashboard sales :', err),
     });
+}
+
+private loadFilterOptions(): void {
+  forkJoin({
+    customers: this.salesService.getCustomerOptions(),
+    products: this.salesService.getProductOptions(),
+    salespersons: this.salesService.getSalespersonOptions(),
+    workstatus: this.salesService.getWorkstatusOptions(),
+    customerCategories: this.salesService.getCustomerCategoryOptions(),
+    productCategories: this.salesService.getProductCategoryOptions(),
+  })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (options) => {
+        this.customerOptions = options.customers;
+        this.productOptions = options.products;
+        this.salespersonOptions = options.salespersons;
+        this.workstatusOptions = options.workstatus;
+        this.customerCategoryOptions = options.customerCategories;
+        this.productCategoryOptions = options.productCategories;
+      },
+      error: (err) => console.error('Erreur chargement options filtres Sales :', err),
+    });
+}
+
+toggleSalesFilterPanel(): void {
+  this.isSalesFilterPanelOpen = !this.isSalesFilterPanelOpen;
+
+  if (this.isSalesFilterPanelOpen) {
+    this.draftSalesFilters = { ...this.selectedSalesFilters };
   }
+}
+
+closeSalesFilterPanel(): void {
+  this.isSalesFilterPanelOpen = false;
+}
+
+applySalesFilters(): void {
+  this.selectedSalesFilters = this.cleanSalesFilters(this.draftSalesFilters);
+  this.isSalesFilterPanelOpen = false;
+  this.reloadAll();
+}
+
+clearSalesFilters(): void {
+  this.draftSalesFilters = {};
+  this.selectedSalesFilters = {};
+  this.isSalesFilterPanelOpen = false;
+  this.reloadAll();
+}
+
+private cleanSalesFilters(filters: SalesFilters): SalesFilters {
+  const cleaned: SalesFilters = {};
+
+  if (filters.customerName && filters.customerName.trim() !== '') {
+    cleaned.customerName = filters.customerName;
+  }
+
+  if (filters.productKey !== null && filters.productKey !== undefined) {
+    cleaned.productKey = Number(filters.productKey);
+  }
+
+  if (filters.salespersonKey !== null && filters.salespersonKey !== undefined) {
+    cleaned.salespersonKey = Number(filters.salespersonKey);
+  }
+
+  if (filters.workstatusLabel && filters.workstatusLabel.trim() !== '') {
+    cleaned.workstatusLabel = filters.workstatusLabel;
+  }
+
+  if (filters.customerCategory && filters.customerCategory.trim() !== '') {
+    cleaned.customerCategory = filters.customerCategory;
+  }
+
+  if (filters.productCategory && filters.productCategory.trim() !== '') {
+    cleaned.productCategory = filters.productCategory;
+  }
+
+  return cleaned;
+}
+
+hasActiveSalesFilters(): boolean {
+  return Object.keys(this.selectedSalesFilters).length > 0;
+}
 
   // ── Appliqueurs de données ─────────────────────────────────────────────────
 
@@ -250,7 +376,6 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
       {
         data: data.map((item) => Number(item.count ?? 0)),
         label: 'Pipeline Deals',
-        backgroundColor: '#93c5fd',
       },
     ],
   };
@@ -285,25 +410,49 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
 }
 
   private applyRevenueByProduct(data: { name: string; amount: number }[]): void {
-    this.revenueByProductChartData = {
-      labels: data.map(i => i.name),
-      datasets: [{ data: data.map(i => i.amount), backgroundColor: CHART_DEFAULTS.primaryColor }],
-    };
-  }
+  this.revenueByProductChartData = {
+    labels: data.map(i => i.name),
+    datasets: [
+      {
+        label: 'Revenue',
+        data: data.map(i => i.amount),
 
-  private applyCustomerRetention(data: { label: string; value: number }[]): void {
-    this.retentionChartData = {
-      labels: data.map(i => i.label),
-      datasets: [{
-        data: data.map(i => i.value),
-        label: 'Customer Retention Rate',
-        fill: true,
-        tension: 0.4,
-        borderColor: CHART_DEFAULTS.greenColor,
-        backgroundColor: CHART_DEFAULTS.greenAlpha,
-      }],
-    };
-  }
+        backgroundColor: 'rgba(91, 97, 246, 0.85)',
+        hoverBackgroundColor: '#5b61f6',
+
+        borderRadius: 12,
+        borderSkipped: false,
+
+        barThickness: 18,
+        maxBarThickness: 22,
+      },
+    ],
+  };
+}
+
+ private applyCustomerRetention(data: { label: string; value: number }[]): void {
+  this.retentionChartData = {
+    labels: data.map(i => i.label),
+    datasets: [{
+      data: data.map(i => i.value),
+      label: 'Customer Retention Rate',
+      fill: true,
+      tension: 0.4,
+
+      // Orange line
+      borderColor: '#f97316',
+
+      // Soft orange background
+      backgroundColor: 'rgba(249, 115, 22, 0.18)',
+
+      // Optional: nicer points
+      pointBackgroundColor: '#fb923c',
+      pointBorderColor: '#ffffff',
+      pointHoverBackgroundColor: '#ea580c',
+      pointHoverBorderColor: '#ffffff',
+    }],
+  };
+}
 
   private applyHighValueDeals(data: { name: string; value: number }[]): void {
     this.highValueDeals = data.map(i => ({ name: i.name, value: this.formatCurrency(i.value) }));

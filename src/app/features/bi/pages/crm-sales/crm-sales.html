@@ -28,10 +28,107 @@
 
       <div class="header-divider"></div>
 
-      <button class="header-action-btn">
-        <span class="material-symbols-outlined btn-icon">filter_alt</span>
-        <span>Filters</span>
-      </button>
+      <div class="filter-wrapper">
+  <button
+    class="header-action-btn"
+    [class.active-filter]="hasActiveSalesFilters()"
+    (click)="toggleSalesFilterPanel()">
+
+    <span class="material-symbols-outlined btn-icon">filter_alt</span>
+    <span>Filters</span>
+
+    @if (hasActiveSalesFilters()) {
+      <span class="filter-dot"></span>
+    }
+  </button>
+
+  @if (isSalesFilterPanelOpen) {
+    <div class="sales-filter-panel" data-html2canvas-ignore="true">
+      <div class="filter-panel-header">
+        <div>
+          <h3>Sales Filters</h3>
+          <p>Refine dashboard analytics</p>
+        </div>
+
+        <button class="filter-close-btn" (click)="closeSalesFilterPanel()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label>Customer</label>
+          <select [(ngModel)]="draftSalesFilters.customerName">
+            <option [ngValue]="null">All customers</option>
+            @for (option of customerOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Product</label>
+          <select [(ngModel)]="draftSalesFilters.productKey">
+            <option [ngValue]="null">All products</option>
+            @for (option of productOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Salesperson</label>
+          <select [(ngModel)]="draftSalesFilters.salespersonKey">
+            <option [ngValue]="null">All salespersons</option>
+            @for (option of salespersonOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Deal Status</label>
+          <select [(ngModel)]="draftSalesFilters.workstatusLabel">
+            <option [ngValue]="null">All statuses</option>
+            @for (option of workstatusOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Customer Category</label>
+          <select [(ngModel)]="draftSalesFilters.customerCategory">
+            <option [ngValue]="null">All categories</option>
+            @for (option of customerCategoryOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Product Category</label>
+          <select [(ngModel)]="draftSalesFilters.productCategory">
+            <option [ngValue]="null">All categories</option>
+            @for (option of productCategoryOptions; track option.value) {
+              <option [ngValue]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button class="filter-reset-btn" (click)="clearSalesFilters()">
+          Clear
+        </button>
+
+        <button class="filter-apply-btn" (click)="applySalesFilters()">
+          Apply Filters
+        </button>
+      </div>
+    </div>
+  }
+</div>
 
       <div class="export-wrapper">
         <button class="header-export-btn" (click)="toggleExportMenu()">
