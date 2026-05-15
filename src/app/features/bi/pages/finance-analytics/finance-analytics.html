@@ -70,12 +70,26 @@
             </div>
 
             <div class="filter-grid">
-              <label class="filter-field">
+              <label class="filter-field autocomplete-wrapper">
                 <span>Customer</span>
+
                 <input
                   type="text"
                   placeholder="Search customer"
-                  [(ngModel)]="draftFinanceFilters.customerName" />
+                  [(ngModel)]="draftFinanceFilters.customerName"
+                  (focus)="showFinanceAutocomplete('customerName')"
+                  (input)="onCustomerNameInput()"
+                  (blur)="closeFinanceAutocomplete()" />
+
+                @if (activeFinanceAutocomplete === 'customerName' && filteredCustomerNames.length > 0) {
+                  <div class="autocomplete-panel">
+                    @for (option of filteredCustomerNames; track option) {
+                      <button type="button" (mousedown)="selectCustomerName(option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                }
               </label>
               <label class="filter-field">
                 <span>Invoice Status</span>
@@ -96,28 +110,70 @@
                   }
                 </select>
               </label>
-              <label class="filter-field">
+              <label class="filter-field autocomplete-wrapper">
                 <span>Customer Category</span>
+
                 <input
                   type="text"
                   placeholder="Customer category"
-                  [(ngModel)]="draftFinanceFilters.customerCategory" />
+                  [(ngModel)]="draftFinanceFilters.customerCategory"
+                  (focus)="showFinanceAutocomplete('customerCategory')"
+                  (input)="onCustomerCategoryInput()"
+                  (blur)="closeFinanceAutocomplete()" />
+
+                @if (activeFinanceAutocomplete === 'customerCategory' && filteredCustomerCategories.length > 0) {
+                  <div class="autocomplete-panel">
+                    @for (option of filteredCustomerCategories; track option) {
+                      <button type="button" (mousedown)="selectCustomerCategory(option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                }
               </label>
 
-              <label class="filter-field">
+              <label class="filter-field autocomplete-wrapper">
                 <span>Vendor</span>
+
                 <input
                   type="text"
                   placeholder="Search vendor"
-                  [(ngModel)]="draftFinanceFilters.vendorName" />
+                  [(ngModel)]="draftFinanceFilters.vendorName"
+                  (focus)="showFinanceAutocomplete('vendorName')"
+                  (input)="onVendorNameInput()"
+                  (blur)="closeFinanceAutocomplete()" />
+
+                @if (activeFinanceAutocomplete === 'vendorName' && filteredVendorNames.length > 0) {
+                  <div class="autocomplete-panel">
+                    @for (option of filteredVendorNames; track option) {
+                      <button type="button" (mousedown)="selectVendorName(option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                }
               </label>
 
-              <label class="filter-field">
+              <label class="filter-field autocomplete-wrapper">
                 <span>Vendor Industry</span>
+
                 <input
                   type="text"
                   placeholder="Vendor industry"
-                  [(ngModel)]="draftFinanceFilters.vendorIndustry" />
+                  [(ngModel)]="draftFinanceFilters.vendorIndustry"
+                  (focus)="showFinanceAutocomplete('vendorIndustry')"
+                  (input)="onVendorIndustryInput()"
+                  (blur)="closeFinanceAutocomplete()" />
+
+                @if (activeFinanceAutocomplete === 'vendorIndustry' && filteredVendorIndustries.length > 0) {
+                  <div class="autocomplete-panel">
+                    @for (option of filteredVendorIndustries; track option) {
+                      <button type="button" (mousedown)="selectVendorIndustry(option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                }
               </label>
 
 
@@ -131,12 +187,28 @@
                   }
                 </select>
               </label>
-              <label class="filter-field">
+
+
+              <label class="filter-field autocomplete-wrapper">
                 <span>Account Name</span>
+
                 <input
                   type="text"
                   placeholder="Search account"
-                  [(ngModel)]="draftFinanceFilters.accountName" />
+                  [(ngModel)]="draftFinanceFilters.accountName"
+                  (focus)="showFinanceAutocomplete('accountName')"
+                  (input)="onAccountNameInput()"
+                  (blur)="closeFinanceAutocomplete()" />
+
+                @if (activeFinanceAutocomplete === 'accountName' && filteredAccountNames.length > 0) {
+                  <div class="autocomplete-panel">
+                    @for (option of filteredAccountNames; track option) {
+                      <button type="button" (mousedown)="selectAccountName(option)">
+                        {{ option }}
+                      </button>
+                    }
+                  </div>
+                }
               </label>
 
               <label class="filter-field">

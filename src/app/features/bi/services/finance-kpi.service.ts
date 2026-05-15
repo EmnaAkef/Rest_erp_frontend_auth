@@ -31,7 +31,13 @@ export interface FinanceFilters {
   minAmount?: number | null;
   maxAmount?: number | null;
 }
-
+export interface FinanceFilterOptionsResponse {
+  customerNames: string[];
+  customerCategories: string[];
+  vendorNames: string[];
+  vendorIndustries: string[];
+  accountNames: string[];
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -181,4 +187,8 @@ export class FinanceKpiService {
       params,
     });
   }
+  getFinanceFilterOptions(): Observable<FinanceFilterOptionsResponse> {
+    return this.http.get<FinanceFilterOptionsResponse>(`${this.apiUrl}/filter-options`);
+  }
 }
+

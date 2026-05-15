@@ -15,6 +15,7 @@ import {
   FinanceAssetDistributionItem,
   FinanceComplianceSummaryResponse,
 } from '../../models/finance-kpi-response';
+import { FinanceFilterOptionsResponse } from '../../services/finance-kpi.service';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
 import { BiFormatService } from '../../services/bi-format.service';
 import { Observable } from 'rxjs';
@@ -83,6 +84,7 @@ export class FinanceAnalyticsComponent implements OnInit {
   constructor(private financeKpiService: FinanceKpiService) {}
 
   ngOnInit(): void {
+    this.loadFinanceFilterOptions();
     this.setPeriod('last6months');
   }
   // ── Finance filters ─────────────────────────────────────────────────────────
@@ -107,7 +109,27 @@ export class FinanceAnalyticsComponent implements OnInit {
     minAmount: null as number | null,
     maxAmount: null as number | null,
   };
+  financeFilterOptions: FinanceFilterOptionsResponse = {
+    customerNames: [],
+    customerCategories: [],
+    vendorNames: [],
+    vendorIndustries: [],
+    accountNames: [],
+  };
 
+  filteredCustomerNames: string[] = [];
+  filteredCustomerCategories: string[] = [];
+  filteredVendorNames: string[] = [];
+  filteredVendorIndustries: string[] = [];
+  filteredAccountNames: string[] = [];
+
+  activeFinanceAutocomplete:
+    | 'customerName'
+    | 'customerCategory'
+    | 'vendorName'
+    | 'vendorIndustry'
+    | 'accountName'
+    | null = null;
   draftFinanceFilters = { ...this.appliedFinanceFilters };
 
   invoiceStatusOptions = [
@@ -151,7 +173,134 @@ export class FinanceAnalyticsComponent implements OnInit {
     { label: 'Infrastructure', value: 'Infrastructure' },
     { label: 'Office Equipment', value: 'Office Equipment' },
   ];
+  private loadFinanceFilterOptions(): void {
+    this.financeKpiService.getFinanceFilterOptions().subscribe({
+      next: (data) => {
+        this.financeFilterOptions = {
+          customerNames: data.customerNames ?? [],
+          customerCategories: data.customerCategories ?? [],
+          vendorNames: data.vendorNames ?? [],
+          vendorIndustries: data.vendorIndustries ?? [],
+          accountNames: data.accountNames ?? [],
+        };
 
+        this.refreshAllFinanceSuggestions();
+      },
+      error: (error) => {
+        console.error('Erreur chargement options filtres finance:', error);
+      },
+    });
+  }
+
+  private filterStartsWith(value: string | null, options: string[]): string[] {
+    const search = (value ?? '').trim().toLowerCase();
+
+    if (!search) {
+      return options.slice(0, 8);
+    }
+
+    return options.filter((option) => option.toLowerCase().startsWith(search)).slice(0, 8);
+  }
+
+  private refreshAllFinanceSuggestions(): void {
+    this.filteredCustomerNames = this.filterStartsWith(
+      this.draftFinanceFilters.customerName,
+      this.financeFilterOptions.customerNames,
+    );
+
+    this.filteredCustomerCategories = this.filterStartsWith(
+      this.draftFinanceFilters.customerCategory,
+      this.financeFilterOptions.customerCategories,
+    );
+
+    this.filteredVendorNames = this.filterStartsWith(
+      this.draftFinanceFilters.vendorName,
+      this.financeFilterOptions.vendorNames,
+    );
+
+    this.filteredVendorIndustries = this.filterStartsWith(
+      this.draftFinanceFilters.vendorIndustry,
+      this.financeFilterOptions.vendorIndustries,
+    );
+
+    this.filteredAccountNames = this.filterStartsWith(
+      this.draftFinanceFilters.accountName,
+      this.financeFilterOptions.accountNames,
+    );
+  }
+
+  showFinanceAutocomplete(
+    field: 'customerName' | 'customerCategory' | 'vendorName' | 'vendorIndustry' | 'accountName',
+  ): void {
+    this.activeFinanceAutocomplete = field;
+    this.refreshAllFinanceSuggestions();
+  }
+
+  closeFinanceAutocomplete(): void {
+    setTimeout(() => {
+      this.activeFinanceAutocomplete = null;
+    }, 150);
+  }
+
+  onCustomerNameInput(): void {
+    this.filteredCustomerNames = this.filterStartsWith(
+      this.draftFinanceFilters.customerName,
+      this.financeFilterOptions.customerNames,
+    );
+  }
+
+  onCustomerCategoryInput(): void {
+    this.filteredCustomerCategories = this.filterStartsWith(
+      this.draftFinanceFilters.customerCategory,
+      this.financeFilterOptions.customerCategories,
+    );
+  }
+
+  onVendorNameInput(): void {
+    this.filteredVendorNames = this.filterStartsWith(
+      this.draftFinanceFilters.vendorName,
+      this.financeFilterOptions.vendorNames,
+    );
+  }
+
+  onVendorIndustryInput(): void {
+    this.filteredVendorIndustries = this.filterStartsWith(
+      this.draftFinanceFilters.vendorIndustry,
+      this.financeFilterOptions.vendorIndustries,
+    );
+  }
+
+  onAccountNameInput(): void {
+    this.filteredAccountNames = this.filterStartsWith(
+      this.draftFinanceFilters.accountName,
+      this.financeFilterOptions.accountNames,
+    );
+  }
+
+  selectCustomerName(value: string): void {
+    this.draftFinanceFilters.customerName = value;
+    this.activeFinanceAutocomplete = null;
+  }
+
+  selectCustomerCategory(value: string): void {
+    this.draftFinanceFilters.customerCategory = value;
+    this.activeFinanceAutocomplete = null;
+  }
+
+  selectVendorName(value: string): void {
+    this.draftFinanceFilters.vendorName = value;
+    this.activeFinanceAutocomplete = null;
+  }
+
+  selectVendorIndustry(value: string): void {
+    this.draftFinanceFilters.vendorIndustry = value;
+    this.activeFinanceAutocomplete = null;
+  }
+
+  selectAccountName(value: string): void {
+    this.draftFinanceFilters.accountName = value;
+    this.activeFinanceAutocomplete = null;
+  }
   toggleFinanceFilters(): void {
     this.isFinanceFilterOpen = !this.isFinanceFilterOpen;
     this.draftFinanceFilters = { ...this.appliedFinanceFilters };
