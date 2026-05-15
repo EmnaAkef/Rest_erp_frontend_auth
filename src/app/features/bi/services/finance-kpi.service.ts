@@ -9,6 +9,7 @@ import {
   FinanceOutstandingInvoiceItem,
   FinanceLiabilityAssetItem,
   FinanceAssetDistributionItem,
+  FinanceComplianceSummaryResponse,
 } from '../models/finance-kpi-response';
 @Injectable({
   providedIn: 'root',
@@ -61,6 +62,16 @@ export class FinanceKpiService {
     const params = new HttpParams().set('endDate', endDate);
 
     return this.http.get<FinanceAssetDistributionItem[]>(`${this.apiUrl}/asset-distribution`, {
+      params,
+    });
+  }
+  getComplianceSummary(
+    startDate: string,
+    endDate: string,
+  ): Observable<FinanceComplianceSummaryResponse> {
+    const params = new HttpParams().set('startDate', startDate).set('endDate', endDate);
+
+    return this.http.get<FinanceComplianceSummaryResponse>(`${this.apiUrl}/compliance-summary`, {
       params,
     });
   }

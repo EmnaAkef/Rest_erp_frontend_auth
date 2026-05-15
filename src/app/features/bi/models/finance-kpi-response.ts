@@ -53,3 +53,20 @@ export interface FinanceAssetDistributionItem {
   assetType: string;
   assetValue: number;
 }
+export interface FinanceComplianceSummaryResponse {
+  complianceStatus: string;
+  complianceStatusIcon: string;
+  nextFilingDates: FinanceFilingDateItem[];
+  taxPayments: FinanceTaxPaymentItem[];
+}
+
+export interface FinanceFilingDateItem {
+  label: string;
+  date: string;
+}
+
+export interface FinanceTaxPaymentItem {
+  code: string;
+  label: string;
+  amount: number;
+}

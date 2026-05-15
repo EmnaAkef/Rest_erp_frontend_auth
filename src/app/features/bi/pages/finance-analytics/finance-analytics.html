@@ -1,4 +1,16 @@
 <div class="dashboard-page" #dashboardContent>
+  @if (isDashboardLoading) {
+    <div class="dashboard-loading-overlay" data-html2canvas-ignore="true">
+      <div class="dashboard-loader-card">
+        <div class="loader-spinner"></div>
+
+        <div class="loader-text">
+          <h3>Loading dashboard</h3>
+          <p>Preparing your financial analytics...</p>
+        </div>
+      </div>
+    </div>
+  }
   <div class="page-header">
     <div class="page-title">
       <h1>Financial Overview</h1>
@@ -226,33 +238,36 @@
         }
       </div>
 
-      <div class="compliance-card">
-        <div class="compliance-header">
-          <span class="shield-icon">{{ complianceStatusIcon }}</span>
-          <strong>Compliance Status: {{ complianceStatus }}</strong>
+      <div class="compliance-card modern-compliance-card">
+        <div class="modern-compliance-header">
+          <div class="modern-compliance-title">
+            <span class="material-symbols-outlined compliance-icon">verified_user</span>
+            <strong>Compliance Status: {{ complianceStatus }}</strong>
+          </div>
         </div>
 
-        <div class="compliance-content">
-          <div class="compliance-block">
+        <div class="modern-compliance-content">
+          <div class="modern-compliance-block">
             <h4>Next Filing Dates</h4>
 
             @for (item of nextFilingDates; track item.label) {
-              <div class="compliance-row">
+              <div class="modern-compliance-row">
                 <span>{{ item.label }}</span>
                 <strong>{{ item.date }}</strong>
               </div>
             }
           </div>
 
-          <div class="compliance-block">
+          <div class="modern-compliance-block">
             <h4>Recent Tax Payments</h4>
 
             @for (item of taxPayments; track item.label) {
-              <div class="payment-row">
-                <div class="payment-left">
-                  <span class="payment-code">{{ item.code }}</span>
+              <div class="modern-payment-row">
+                <div class="modern-payment-left">
+                  <span class="modern-payment-code">{{ item.code }}</span>
                   <span>{{ item.label }}</span>
                 </div>
+
                 <strong>{{ item.amount }}</strong>
               </div>
             }
