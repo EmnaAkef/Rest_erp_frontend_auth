@@ -436,7 +436,7 @@
                 baseChart
                 [data]="liabilityAssetsChartData"
                 [type]="liabilityAssetsChartType"
-                [options]="commonBarOptions">
+                [options]="liabilityAssetsChartOptions">
               </canvas>
             } @else {
               <div class="no-data">
@@ -448,14 +448,19 @@
 
           <div class="summary-pairs">
             <div class="summary-box">
-              <span>Total Liabilities</span>
-              <strong>{{ totalLiabilitiesDisplay }}</strong>
+              <span>ASSET VALUE</span>
+              <strong class="asset-value">
+                {{ assetValueDisplay }}
+              </strong>
+            </div>
+            <div class="summary-box">
+              <span>TOTAL LIABILITIES</span>
+              <strong class="liability-value">
+                {{ totalLiabilitiesDisplay }}
+              </strong>
             </div>
 
-            <div class="summary-box">
-              <span>Asset Value</span>
-              <strong>{{ assetValueDisplay }}</strong>
-            </div>
+
           </div>
         </div>
       </div>

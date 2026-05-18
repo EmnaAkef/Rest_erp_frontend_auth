@@ -496,6 +496,8 @@ export class FinanceAnalyticsComponent implements OnInit {
         return 'status-overdue';
       case 'pending':
         return 'status-pending';
+      case 'unpaid':
+        return 'status-unpaid';
       case 'partial':
         return 'status-partial';
       default:
@@ -644,7 +646,24 @@ export class FinanceAnalyticsComponent implements OnInit {
       },
     ];
   }
-
+  liabilityAssetsChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value) => Number(value).toLocaleString('en-US'),
+        },
+      },
+    },
+  };
   private loadRevenueProfitTrend(): void {
     this.trackDashboardLoading(
       this.financeKpiService.getRevenueProfitTrend(
@@ -768,14 +787,18 @@ export class FinanceAnalyticsComponent implements OnInit {
           labels: ['Assets', 'Liabilities'],
           datasets: [
             {
-              data: [totalAssets],
+              data: [Number(data.totalAssets ?? 0), 0],
               label: 'Total Asset Value',
-              backgroundColor: '#f6b04f',
+              backgroundColor: '#f59e0b',
+              borderRadius: 10,
+              borderSkipped: false,
             },
             {
-              data: [totalLiabilities],
+              data: [0, Number(data.totalLiabilities ?? 0)],
               label: 'Total Liabilities',
-              backgroundColor: '#f3c98c',
+              backgroundColor: '#f8c978',
+              borderRadius: 10,
+              borderSkipped: false,
             },
           ],
         };

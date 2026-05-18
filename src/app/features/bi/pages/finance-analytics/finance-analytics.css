@@ -834,7 +834,17 @@ tbody td {
   padding: 22px;
   z-index: 80;
 }
+.summary-box strong.asset-value {
+  color: #f59e0b;
+}
 
+.summary-box strong.liability-value {
+  color: #f8c978;
+}
+.status-unpaid {
+  background: #f1f5f9;
+  color: #475569;
+}
 .filter-panel-header {
   display: flex;
   justify-content: space-between;
