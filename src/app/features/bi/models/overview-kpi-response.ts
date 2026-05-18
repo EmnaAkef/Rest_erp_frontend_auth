@@ -17,6 +17,7 @@ export interface OverviewCashSummaryItem {
   cashBalance: number;
   inflow: number;
   outflow: number;
+  netCashFlow: number;
 }
 export interface OverviewPipelineFunnelItem {
   stage: string;

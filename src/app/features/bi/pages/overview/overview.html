@@ -112,6 +112,16 @@
             {{ cashBalanceDisplay }}
           </div>
 
+
+          <div class="net-cash-flow">
+            <span>Net Flow</span>
+            <strong
+              [class.summary-positive]="netCashFlowValue >= 0"
+              [class.summary-negative]="netCashFlowValue < 0">
+              {{ netCashFlowDisplay }}
+            </strong>
+          </div>
+
           @for (bar of cashBalanceBars; track bar.label) {
             <div class="cash-bar-block">
               <div class="cash-bar-top">
@@ -143,7 +153,7 @@
               baseChart
               [data]="financialLineData"
               [type]="financialLineType"
-              [options]="minimalLineOptions">
+              [options]="netProfitTrendOptions">
             </canvas>
           </div>
 
@@ -252,37 +262,33 @@
     </app-section-title>
 
     <div class="two-col-grid">
-      <div class="card">
-        <div class="subsection-title">
-          <h3>Attendance Trends</h3>
+      <div class="card attendance-trends-card">
+        <div class="subsection-title attendance-title">
+          <div>
+            <h3>Attendance Trends</h3>
+            <p>On-time performance and late check-ins evolution</p>
+          </div>
+
+
         </div>
 
-        <div class="chart-container small">
+        <div class="chart-container attendance-chart-container">
           <canvas
             baseChart
             [data]="attendanceTrendData"
             [type]="attendanceTrendType"
-            [options]="minimalLineOptions">
+            [options]="attendanceTrendOptions">
           </canvas>
         </div>
 
-        <div class="chart-container mini">
-          <canvas
-            baseChart
-            [data]="attendanceTrendMiniData"
-            [type]="attendanceTrendType"
-            [options]="minimalLineOptions">
-          </canvas>
-        </div>
-
-        <div class="mini-stats-row">
-          <div class="mini-stat-box">
-            <small>On-Time Rate</small>
+        <div class="attendance-summary-row">
+          <div class="attendance-summary-card">
+            <span>On-Time Rate</span>
             <strong>{{ onTimeRateDisplay }}</strong>
           </div>
 
-          <div class="mini-stat-box">
-            <small>Late Check-ins</small>
+          <div class="attendance-summary-card warning">
+            <span>Late Check-ins</span>
             <strong>{{ lateCheckinsDisplay }}</strong>
           </div>
         </div>
@@ -321,13 +327,18 @@
       subtitle="Lifecycle value and retention analysis">
     </app-section-title>
 
-    <div class="two-col-grid">
-      <div class="card customer-retention-card">
-        <div class="subsection-title">
-          <h3>Customer Retention</h3>
+    <div class="two-col-grid customer-insights-grid">
+      <div class="card customer-retention-card improved-retention-card">
+        <div class="subsection-title retention-header">
+          <div>
+            <h3>Customer Retention</h3>
+            <p>Active customer loyalty overview</p>
+          </div>
+
+
         </div>
 
-        <div class="retention-content">
+        <div class="retention-content improved-retention-content">
           <div class="chart-container retention retention-chart-side">
             <canvas
               baseChart
@@ -337,28 +348,35 @@
             </canvas>
           </div>
 
-          <div class="retention-side-info">
-            <strong>{{ retentionRateDisplay }}</strong>
-            <span>Retention</span>
+          <div class="retention-side-info improved-retention-info">
+            <div class="retention-rate-box">
+              <span>Retention Rate</span>
+              <strong>{{ retentionRateDisplay }}</strong>
+            </div>
 
-            <p>
-              {{ retentionNote }}
-            </p>
+            <p>{{ retentionNote }}</p>
+
+
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="subsection-title">
-          <h3>Top Customers by Revenue</h3>
+      <div class="card top-customers-card">
+        <div class="subsection-title with-select">
+          <div>
+            <h3>Top Customers by Revenue</h3>
+            <p>Highest revenue contribution by customer</p>
+          </div>
+
+
         </div>
 
-        <div class="chart-container medium">
+        <div class="chart-container top-customers-chart">
           <canvas
             baseChart
             [data]="customerRevenueData"
             [type]="customerRevenueType"
-            [options]="commonLineOptions">
+            [options]="customerRevenueOptions">
           </canvas>
         </div>
       </div>

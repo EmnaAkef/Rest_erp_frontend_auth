@@ -58,7 +58,7 @@
   }
 }
 .top-kpi-grid ::ng-deep .kpi-value {
-  font-size: 22px;
+  font-size: 19px;
 }
 .top-toolbar {
   display: flex;
@@ -225,7 +225,17 @@
   grid-template-columns: 2.1fr 1fr;
   gap: 18px;
 }
+.financial-grid .large-card {
+  height: 560px;
+  display: flex;
+  flex-direction: column;
+}
 
+.financial-grid .large-card .chart-container {
+  flex: 1;
+  height: 100%;
+  min-height: 390px;
+}
 .side-summary-column {
   display: flex;
   flex-direction: column;
@@ -294,8 +304,9 @@
 }
 
 .mini-chart-container {
-  height: 80px;
-  margin: 16px 0;
+  height: 150px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 
 .mini-footer-row {
@@ -388,8 +399,13 @@
 
 .two-col-grid {
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+.two-col-grid > .card {
+  min-height: 486px;
+  height: 100%;
 }
 
 .legend-list {
@@ -724,6 +740,11 @@ tbody td {
     grid-template-columns: 1fr;
   }
 }
+.top-kpi-grid ::ng-deep .kpi-title {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
 .export-wrapper {
   position: relative;
 }
@@ -858,3 +879,238 @@ tbody td {
   background: #eef2ff;
   color: #4f46e5;
 }
+.mini-stats-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.mini-stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-stat-box small {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.mini-stat-box strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+.attendance-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.attendance-title h3 {
+  margin: 0;
+}
+
+.attendance-title p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #7b8494;
+}
+
+.attendance-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.attendance-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.legend-dot.primary {
+  background: #5b61f6;
+}
+
+.legend-dot.secondary {
+  background: #a7a5ff;
+}
+
+.attendance-chart-container {
+  height: 210px;
+  margin-top: 16px;
+}
+
+.attendance-summary-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.attendance-summary-card {
+  background: #f8f9ff;
+  border: 1px solid #edf1ff;
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+
+.attendance-summary-card span {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.attendance-summary-card strong {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.attendance-summary-card.warning {
+  background: #fff8ed;
+  border-color: #ffe4b8;
+}
+
+.attendance-summary-card.warning strong {
+  color: #f59e0b;
+}
+/* Workforce cards: fill empty space */
+.two-col-grid > .card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Attendance card */
+.attendance-trends-card {
+  justify-content: space-between;
+}
+
+.attendance-chart-container {
+  height: 240px;
+  margin-top: 16px;
+}
+
+.attendance-summary-row {
+  margin-top: 24px;
+}
+
+/* Department distribution card */
+.two-col-grid > .card:nth-child(2) {
+  justify-content: flex-start;
+}
+
+.dept-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.dept-row {
+  gap: 10px;
+}
+
+.dept-track {
+  height: 10px;
+}
+/* Customer Insights: fill empty space */
+.customer-insights-grid > .card {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Customer Retention card */
+.improved-retention-card {
+  justify-content: flex-start;
+}
+
+.improved-retention-content {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  align-items: center;
+  gap: 36px;
+  margin-top: 28px;
+}
+
+.retention-chart-side {
+  width: 260px !important;
+  height: 260px !important;
+}
+
+.retention-chart-side canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.improved-retention-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+/* Top Customers card */
+.top-customers-card {
+  justify-content: flex-start;
+}
+
+.top-customers-chart {
+  flex: 1;
+  min-height: 360px;
+  margin-top: 28px;
+}
+
+.top-customers-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.net-cash-flow {
+  margin-top: 10px;
+  margin-bottom: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.net-cash-flow span {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.net-cash-flow strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+.net-cash-flow .summary-positive {
+  color: #16a34a;
+}
+
+.net-cash-flow .summary-negative {
+  color: #dc2626;
+}
+

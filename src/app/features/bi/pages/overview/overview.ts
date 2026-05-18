@@ -61,6 +61,9 @@ export class OverviewComponent implements OnInit {
   startDate = '';
   endDate = '';
 
+  netCashFlowDisplay = '0';
+  netCashFlowValue = 0;
+
   cashBalanceDisplay = '';
   avgMonthlyNetProfitDisplay = '';
   onTimeRateDisplay = '0%';
@@ -142,7 +145,67 @@ export class OverviewComponent implements OnInit {
       },
     },
   };
-
+  netProfitTrendOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        padding: 10,
+        cornerRadius: 10,
+        callbacks: {
+          label: (context) => {
+            const value = Number(context.parsed.y ?? 0);
+            return `Net Profit: ${value.toLocaleString('en-US')}M ${this.companyCurrency}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#7b8494',
+          font: {
+            size: 11,
+          },
+          maxRotation: 35,
+          minRotation: 25,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(148, 163, 184, 0.18)',
+        },
+        ticks: {
+          color: '#7b8494',
+          font: {
+            size: 11,
+          },
+          callback: (value) => `${Number(value).toLocaleString('en-US')}M`,
+        },
+      },
+    },
+    elements: {
+      line: {
+        tension: 0.4,
+        borderWidth: 3,
+      },
+      point: {
+        radius: 4,
+        hoverRadius: 6,
+        borderWidth: 2,
+      },
+    },
+  };
   minimalLineOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -288,9 +351,59 @@ export class OverviewComponent implements OnInit {
       },
     ],
   };
-
+  customerRevenueOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        padding: 12,
+        cornerRadius: 12,
+        callbacks: {
+          label: (context) => {
+            const value = Number(context.parsed.y ?? 0);
+            return `Revenue: ${value.toLocaleString('en-US')}M`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#64748b',
+          font: {
+            size: 12,
+            weight: 500,
+          },
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(148, 163, 184, 0.18)',
+        },
+        ticks: {
+          color: '#64748b',
+          font: {
+            size: 12,
+          },
+          callback: (value) => `${Number(value).toLocaleString('en-US')}M`,
+        },
+      },
+    },
+  };
   private loadFinancialTrend(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getFinancialTrend(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getFinancialTrend(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyFinancialTrend(data);
       },
@@ -323,9 +436,14 @@ export class OverviewComponent implements OnInit {
         {
           data: data.map((item) => this.toMillions(item.netProfit)),
           label: 'Net Profit',
-          tension: 0.35,
-          fill: false,
-          borderColor: '#4f46e5',
+          tension: 0.4,
+          fill: true,
+          borderColor: '#5b61f6',
+          backgroundColor: 'rgba(91, 97, 246, 0.14)',
+          pointBackgroundColor: '#5b61f6',
+          pointBorderColor: '#ffffff',
+          pointRadius: 4,
+          pointHoverRadius: 6,
         },
       ],
     };
@@ -341,7 +459,9 @@ export class OverviewComponent implements OnInit {
     return Number(((value ?? 0) / 1_000_000).toFixed(2));
   }
   private loadCashSummary(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getCashSummary(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getCashSummary(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyCashSummary(data);
       },
@@ -352,27 +472,40 @@ export class OverviewComponent implements OnInit {
   }
 
   private applyCashSummary(data: OverviewCashSummaryItem): void {
-    this.cashBalanceDisplay = this.formatCompactCurrency(data.cashBalance);
+    const cashBalance = Number(data.cashBalance ?? 0);
+    const inflow = Number(data.inflow ?? 0);
+    const outflow = Number(data.outflow ?? 0);
+    const netCashFlow = Number(data.netCashFlow ?? 0);
 
-    const maxValue = Math.max(data.inflow, data.outflow, 1);
+    this.cashBalanceDisplay = this.formatCompactCurrency(cashBalance);
+
+    this.netCashFlowValue = netCashFlow;
+    this.netCashFlowDisplay =
+      netCashFlow >= 0
+        ? `+${this.formatCompactCurrency(netCashFlow)}`
+        : `-${this.formatCompactCurrency(Math.abs(netCashFlow))}`;
+
+    const maxValue = Math.max(inflow, outflow, 1);
 
     this.cashBalanceBars = [
       {
         label: 'Inflow',
-        value: `+${this.formatCompactCurrency(data.inflow)}`,
-        width: Math.round((data.inflow / maxValue) * 100),
+        value: `+${this.formatCompactCurrency(inflow)}`,
+        width: Math.round((inflow / maxValue) * 100),
         color: 'green',
       },
       {
         label: 'Outflow',
-        value: `-${this.formatCompactCurrency(data.outflow)}`,
-        width: Math.round((data.outflow / maxValue) * 100),
+        value: `-${this.formatCompactCurrency(outflow)}`,
+        width: Math.round((outflow / maxValue) * 100),
         color: 'red',
       },
     ];
   }
   private loadSalesPipelineFunnel(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getSalesPipelineFunnel(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getSalesPipelineFunnel(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applySalesPipelineFunnel(data);
       },
@@ -387,15 +520,17 @@ export class OverviewComponent implements OnInit {
       labels: data.map((item) => item.stage),
       datasets: [
         {
-          data: data.map((item) => this.toMillions(item.pipelineValue)),
-          label: 'Pipeline Value',
+          data: data.map((item) => Number(item.dealCount ?? 0)),
+          label: 'Pipeline Deals',
           backgroundColor: '#f59e0b',
         },
       ],
     };
   }
   private loadAttendanceTrend(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getAttendanceTrend(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getAttendanceTrend(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyAttendanceTrend(data);
       },
@@ -404,17 +539,122 @@ export class OverviewComponent implements OnInit {
       },
     });
   }
+  attendanceTrendOptions: ChartConfiguration<'line'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: '#111827',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        padding: 12,
+        cornerRadius: 12,
+        callbacks: {
+          label: (context) => {
+            const label = context.dataset.label || '';
+            const value = Number(context.parsed.y ?? 0);
 
+            if (label.includes('Presence') || label.includes('On-Time')) {
+              return `${label}: ${value.toFixed(2)}%`;
+            }
+
+            return `${label}: ${value.toLocaleString('en-US')}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: '#7b8494',
+          font: {
+            size: 11,
+          },
+        },
+      },
+      y: {
+        type: 'linear',
+        position: 'left',
+        min: 0,
+        max: 100,
+        grid: {
+          color: 'rgba(148, 163, 184, 0.18)',
+        },
+        ticks: {
+          color: '#7b8494',
+          font: {
+            size: 11,
+          },
+          callback: (value) => `${value}%`,
+        },
+      },
+      y1: {
+        type: 'linear',
+        position: 'right',
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+        },
+        ticks: {
+          color: '#7b8494',
+          font: {
+            size: 11,
+          },
+          callback: (value) => Number(value).toLocaleString('en-US'),
+        },
+      },
+    },
+    elements: {
+      line: {
+        tension: 0.42,
+        borderWidth: 3,
+      },
+      point: {
+        radius: 4,
+        hoverRadius: 6,
+        borderWidth: 2,
+      },
+    },
+  };
   private applyAttendanceTrend(data: OverviewAttendanceTrendItem[]): void {
     this.attendanceTrendData = {
       labels: data.map((item) => item.period),
       datasets: [
         {
-          data: data.map((item) => item.presenceRate),
-          label: 'Presence Rate',
-          tension: 0.4,
+          data: data.map((item) => Number(item.onTimeRate ?? item.presenceRate ?? 0)),
+          label: 'On-Time Rate',
+          tension: 0.42,
+          fill: true,
+          borderColor: '#5b61f6',
+          backgroundColor: 'rgba(91, 97, 246, 0.12)',
+          pointBackgroundColor: '#5b61f6',
+          pointBorderColor: '#ffffff',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: 'y',
+        },
+        {
+          data: data.map((item) => Number(item.lateCheckins ?? 0)),
+          label: 'Late Check-ins',
+          tension: 0.42,
           fill: false,
-          borderColor: '#4f46e5',
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b',
+          pointBackgroundColor: '#f59e0b',
+          pointBorderColor: '#ffffff',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: 'y1',
         },
       ],
     };
@@ -423,18 +663,23 @@ export class OverviewComponent implements OnInit {
       labels: data.map((item) => item.period),
       datasets: [
         {
-          data: data.map((item) => item.lateCheckins),
+          data: data.map((item) => Number(item.lateCheckins ?? 0)),
           label: 'Late Check-ins',
-          tension: 0.4,
+          tension: 0.42,
           fill: false,
-          borderColor: '#b4b1ff',
+          borderColor: '#a7a5ff',
+          backgroundColor: '#a7a5ff',
+          pointRadius: 3,
+          pointHoverRadius: 5,
         },
       ],
     };
 
     const latest = data.length > 0 ? data[data.length - 1] : null;
 
-    this.onTimeRateDisplay = latest ? this.formatPercent(latest.onTimeRate) : '0%';
+    this.onTimeRateDisplay = latest
+      ? this.formatPercent(latest.onTimeRate ?? latest.presenceRate)
+      : '0%';
 
     this.lateCheckinsDisplay = latest ? this.formatNumber(latest.lateCheckins) : '0';
   }
@@ -490,7 +735,9 @@ export class OverviewComponent implements OnInit {
   }
 
   private loadTopCustomersByRevenue(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getTopCustomersByRevenue(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getTopCustomersByRevenue(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyTopCustomersByRevenue(data);
       },
@@ -513,13 +760,19 @@ export class OverviewComponent implements OnInit {
           data: data.map((item) => this.toMillions(item.revenue)),
           label: 'Revenue',
           backgroundColor: '#f59e0b',
+          borderRadius: 12,
+          borderSkipped: false,
+          barThickness: 48,
+          maxBarThickness: 54,
         },
       ],
     };
   }
 
   private loadOperationalAlerts(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getOperationalAlerts(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getOperationalAlerts(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyOperationalAlerts(data);
       },
@@ -551,17 +804,19 @@ export class OverviewComponent implements OnInit {
     }
 
     if (item.title === 'Unscheduled Late') {
-      return `${item.value.toFixed(2)}${suffix}`;
+      return `${Number(item.value ?? 0).toFixed(2)}${suffix}`;
     }
 
     if (item.title === 'Lead Drop-off Rate') {
-      return `${item.value.toFixed(2)}${suffix}`;
+      return `${Number(item.value ?? 0).toFixed(2)}${suffix}`;
     }
 
     return `${item.value}${suffix}`;
   }
   private loadExecutiveLedger(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getExecutiveLedger(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getExecutiveLedger(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyExecutiveLedger(data);
       },
@@ -715,19 +970,19 @@ export class OverviewComponent implements OnInit {
   }
 
   private trackDashboardLoading<T>(request$: Observable<T>): Observable<T> {
-  this.dashboardLoadingRequests++;
-  this.isDashboardLoading = true;
+    this.dashboardLoadingRequests++;
+    this.isDashboardLoading = true;
 
-  return request$.pipe(
-    finalize(() => {
-      this.dashboardLoadingRequests = Math.max(0, this.dashboardLoadingRequests - 1);
+    return request$.pipe(
+      finalize(() => {
+        this.dashboardLoadingRequests = Math.max(0, this.dashboardLoadingRequests - 1);
 
-      if (this.dashboardLoadingRequests === 0) {
-        this.isDashboardLoading = false;
-      }
-    })
-  );
-}
+        if (this.dashboardLoadingRequests === 0) {
+          this.isDashboardLoading = false;
+        }
+      }),
+    );
+  }
 
   setPeriod(period: 'last30days' | 'last6months' | 'yearToDate'): void {
     this.selectedPeriod = period;
@@ -769,7 +1024,9 @@ export class OverviewComponent implements OnInit {
     this.loadingKpis = true;
     this.kpiErrorMessage = '';
 
-    this.trackDashboardLoading(this.overviewKpiService.getOverviewKpis(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getOverviewKpis(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         console.log('Overview KPIs reçus:', data);
         console.log('Période utilisée:', this.startDate, this.endDate);
@@ -900,7 +1157,9 @@ export class OverviewComponent implements OnInit {
   }
 
   private loadDealStatus(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getDealStatus(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getDealStatus(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyDealStatus(data);
       },
@@ -928,7 +1187,9 @@ export class OverviewComponent implements OnInit {
     }));
   }
   private loadTopSalesPerformers(): void {
-    this.trackDashboardLoading(this.overviewKpiService.getTopSalesPerformers(this.startDate, this.endDate)).subscribe({
+    this.trackDashboardLoading(
+      this.overviewKpiService.getTopSalesPerformers(this.startDate, this.endDate),
+    ).subscribe({
       next: (data) => {
         this.applyTopSalesPerformers(data);
       },
