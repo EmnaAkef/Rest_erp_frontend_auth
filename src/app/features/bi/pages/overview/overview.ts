@@ -124,7 +124,32 @@ export class OverviewComponent implements OnInit {
     presence: string;
     customers: string;
   }[] = [];
-
+  pipelineFunnelOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          display: false,
+        },
+      },
+      y: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+  };
   commonLineOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -514,15 +539,20 @@ export class OverviewComponent implements OnInit {
       },
     });
   }
-
   private applySalesPipelineFunnel(data: OverviewPipelineFunnelItem[]): void {
+    const sortedData = [...data].sort(
+      (a, b) => Number(b.dealCount ?? 0) - Number(a.dealCount ?? 0),
+    );
+
     this.pipelineFunnelData = {
-      labels: data.map((item) => item.stage),
+      labels: sortedData.map((item) => item.stage),
       datasets: [
         {
-          data: data.map((item) => Number(item.dealCount ?? 0)),
+          data: sortedData.map((item) => Number(item.dealCount ?? 0)),
           label: 'Pipeline Deals',
           backgroundColor: '#f59e0b',
+          borderRadius: 4,
+          barThickness: 28,
         },
       ],
     };
@@ -1220,5 +1250,31 @@ export class OverviewComponent implements OnInit {
     }
 
     return '$0';
+  }
+  exportExecutiveLedgerAsCSV(): void {
+    const rows = this.executiveLedger.map((item) => ({
+      Period: item.period,
+      Revenue: item.revenue,
+      Expenses: item.expenses,
+      'Net Profit': item.profit,
+      'Deals Won': item.deals,
+      Pipeline: item.pipeline,
+      Employees: item.employees,
+      Presence: item.presence,
+      Customers: item.customers,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'executive-summary-ledger.csv');
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 }

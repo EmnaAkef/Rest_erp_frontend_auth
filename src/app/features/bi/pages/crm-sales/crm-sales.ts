@@ -85,7 +85,6 @@ Chart.register(...registerables);
   styleUrl: './crm-sales.css',
 })
 export class CrmSalesComponent implements OnInit, OnDestroy {
-
   // ── Refs & DI ──────────────────────────────────────────────────────────────
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
   private readonly salesService = inject(SalesService);
@@ -136,7 +135,35 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
       y: { beginAtZero: true },
     },
   };
+  readonly pipelineChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y', // ← changer 'x' en 'y'
 
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+    },
+
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          precision: 0,
+        },
+      },
+      y: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+  };
   readonly simpleBarOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -159,44 +186,44 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   };
 
   readonly revenueByProductChartOptions: ChartOptions<'bar'> = {
-  indexAxis: 'y',
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false,
-    },
-    tooltip: {
-      callbacks: {
-        label: (context) => {
-          const value = Number(context.raw || 0);
-          return `${value.toLocaleString('fr-FR')} ${this.currency}`;
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const value = Number(context.raw || 0);
+            return `${value.toLocaleString('fr-FR')} ${this.currency}`;
+          },
         },
       },
     },
-  },
-  scales: {
-    x: {
-      ticks: {
-        callback: (value) => Number(value).toLocaleString('fr-FR'),
+    scales: {
+      x: {
+        ticks: {
+          callback: (value) => Number(value).toLocaleString('fr-FR'),
+        },
+        grid: {
+          color: 'rgba(148, 163, 184, 0.25)',
+        },
       },
-      grid: {
-        color: 'rgba(148, 163, 184, 0.25)',
+      y: {
+        grid: {
+          display: false,
+        },
       },
     },
-    y: {
-      grid: {
-        display: false,
-      },
-    },
-  },
-};
+  };
 
   // ── Chart data (initialisé vide — rempli par les loaders) ──────────────────
-  revenueChartType:         'bar'  = 'bar';
-  pipelineChartType:        'bar'  = 'bar';
-  retentionChartType:       'line' = 'line';
-  revenueByProductChartType:'bar'  = 'bar';
+  revenueChartType: 'bar' = 'bar';
+  pipelineChartType: 'bar' = 'bar';
+  retentionChartType: 'line' = 'line';
+  revenueByProductChartType: 'bar' = 'bar';
 
   revenueChartData: ChartData<'bar'> = this.emptyBarData('Revenue');
   pipelineChartData: ChartData<'bar'> = this.emptyBarData('Pipeline Deals');
@@ -206,10 +233,10 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-  this.updateDateRange(this.selectedPeriod);
-  this.loadFilterOptions();
-  this.reloadAll();
-}
+    this.updateDateRange(this.selectedPeriod);
+    this.loadFilterOptions();
+    this.reloadAll();
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -231,272 +258,347 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
    * Les appels indépendants (retention, highValueDeals) sont lancés en parallèle.
    */
   private reloadAll(): void {
-  this.isDashboardLoading = true;
+    this.isDashboardLoading = true;
 
-  const filters = this.selectedSalesFilters;
+    const filters = this.selectedSalesFilters;
 
-  forkJoin({
-    kpis: this.salesService.getSalesKpis(this.startDate, this.endDate, filters),
-    revenueTrend: this.salesService.getRevenueTrend(this.startDate, this.endDate, filters),
-    pipeline: this.salesService.getPipelineDistribution(this.startDate, this.endDate, filters),
-    topSales: this.salesService.getTopSalespersons(this.startDate, this.endDate, filters),
-    revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate, filters),
-    orders: this.salesService.getRecentOrders(this.startDate, this.endDate, filters),
-    retention: this.salesService.getCustomerRetention(this.startDate, this.endDate, filters),
-    highDeals: this.salesService.getHighValueDeals(this.startDate, this.endDate, filters),
-  })
-    .pipe(
-      takeUntil(this.destroy$),
-      finalize(() => (this.isDashboardLoading = false)),
-    )
-    .subscribe({
-      next: (results) => {
-        this.currency = results.kpis.currency || '';
+    forkJoin({
+      kpis: this.salesService.getSalesKpis(this.startDate, this.endDate, filters),
+      revenueTrend: this.salesService.getRevenueTrend(this.startDate, this.endDate, filters),
+      pipeline: this.salesService.getPipelineDistribution(this.startDate, this.endDate, filters),
+      topSales: this.salesService.getTopSalespersons(this.startDate, this.endDate, filters),
+      revenueProduct: this.salesService.getRevenueByProduct(this.startDate, this.endDate, filters),
+      orders: this.salesService.getRecentOrders(this.startDate, this.endDate, filters),
+      retention: this.salesService.getCustomerRetention(this.startDate, this.endDate, filters),
+      highDeals: this.salesService.getHighValueDeals(this.startDate, this.endDate, filters),
+    })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.isDashboardLoading = false)),
+      )
+      .subscribe({
+        next: (results) => {
+          this.currency = results.kpis.currency || '';
 
-        this.applySalesKpis(results.kpis);
-        this.applyRevenueTrend(results.revenueTrend);
-        this.applyPipelineDistribution(results.pipeline);
-        this.applyTopSalespersons(results.topSales);
-        this.applyRevenueByProduct(results.revenueProduct);
-        this.applyRecentOrders(results.orders);
-        this.applyCustomerRetention(results.retention);
-        this.applyHighValueDeals(results.highDeals);
-      },
-      error: (err) => console.error('Erreur chargement dashboard sales :', err),
-    });
-}
-
-private loadFilterOptions(): void {
-  forkJoin({
-    customers: this.salesService.getCustomerOptions(),
-    products: this.salesService.getProductOptions(),
-    salespersons: this.salesService.getSalespersonOptions(),
-    workstatus: this.salesService.getWorkstatusOptions(),
-    customerCategories: this.salesService.getCustomerCategoryOptions(),
-    productCategories: this.salesService.getProductCategoryOptions(),
-  })
-    .pipe(takeUntil(this.destroy$))
-    .subscribe({
-      next: (options) => {
-        this.customerOptions = options.customers;
-        this.productOptions = options.products;
-        this.salespersonOptions = options.salespersons;
-        this.workstatusOptions = options.workstatus;
-        this.customerCategoryOptions = options.customerCategories;
-        this.productCategoryOptions = options.productCategories;
-      },
-      error: (err) => console.error('Erreur chargement options filtres Sales :', err),
-    });
-}
-
-toggleSalesFilterPanel(): void {
-  this.isSalesFilterPanelOpen = !this.isSalesFilterPanelOpen;
-
-  if (this.isSalesFilterPanelOpen) {
-    this.draftSalesFilters = { ...this.selectedSalesFilters };
-  }
-}
-
-closeSalesFilterPanel(): void {
-  this.isSalesFilterPanelOpen = false;
-}
-
-applySalesFilters(): void {
-  this.selectedSalesFilters = this.cleanSalesFilters(this.draftSalesFilters);
-  this.isSalesFilterPanelOpen = false;
-  this.reloadAll();
-}
-
-clearSalesFilters(): void {
-  this.draftSalesFilters = {};
-  this.selectedSalesFilters = {};
-  this.isSalesFilterPanelOpen = false;
-  this.reloadAll();
-}
-
-private cleanSalesFilters(filters: SalesFilters): SalesFilters {
-  const cleaned: SalesFilters = {};
-
-  if (filters.customerName && filters.customerName.trim() !== '') {
-    cleaned.customerName = filters.customerName;
+          this.applySalesKpis(results.kpis);
+          this.applyRevenueTrend(results.revenueTrend);
+          this.applyPipelineDistribution(results.pipeline);
+          this.applyTopSalespersons(results.topSales);
+          this.applyRevenueByProduct(results.revenueProduct);
+          this.applyRecentOrders(results.orders);
+          this.applyCustomerRetention(results.retention);
+          this.applyHighValueDeals(results.highDeals);
+        },
+        error: (err) => console.error('Erreur chargement dashboard sales :', err),
+      });
   }
 
-  if (filters.productKey !== null && filters.productKey !== undefined) {
-    cleaned.productKey = Number(filters.productKey);
+  private loadFilterOptions(): void {
+    forkJoin({
+      customers: this.salesService.getCustomerOptions(),
+      products: this.salesService.getProductOptions(),
+      salespersons: this.salesService.getSalespersonOptions(),
+      workstatus: this.salesService.getWorkstatusOptions(),
+      customerCategories: this.salesService.getCustomerCategoryOptions(),
+      productCategories: this.salesService.getProductCategoryOptions(),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (options) => {
+          this.customerOptions = options.customers;
+          this.productOptions = options.products;
+          this.salespersonOptions = options.salespersons;
+          this.workstatusOptions = options.workstatus;
+          this.customerCategoryOptions = options.customerCategories;
+          this.productCategoryOptions = options.productCategories;
+        },
+        error: (err) => console.error('Erreur chargement options filtres Sales :', err),
+      });
   }
 
-  if (filters.salespersonKey !== null && filters.salespersonKey !== undefined) {
-    cleaned.salespersonKey = Number(filters.salespersonKey);
+  toggleSalesFilterPanel(): void {
+    this.isSalesFilterPanelOpen = !this.isSalesFilterPanelOpen;
+
+    if (this.isSalesFilterPanelOpen) {
+      this.draftSalesFilters = { ...this.selectedSalesFilters };
+    }
   }
 
-  if (filters.workstatusLabel && filters.workstatusLabel.trim() !== '') {
-    cleaned.workstatusLabel = filters.workstatusLabel;
+  closeSalesFilterPanel(): void {
+    this.isSalesFilterPanelOpen = false;
   }
 
-  if (filters.customerCategory && filters.customerCategory.trim() !== '') {
-    cleaned.customerCategory = filters.customerCategory;
+  applySalesFilters(): void {
+    this.selectedSalesFilters = this.cleanSalesFilters(this.draftSalesFilters);
+    this.isSalesFilterPanelOpen = false;
+    this.reloadAll();
   }
 
-  if (filters.productCategory && filters.productCategory.trim() !== '') {
-    cleaned.productCategory = filters.productCategory;
+  clearSalesFilters(): void {
+    this.draftSalesFilters = {};
+    this.selectedSalesFilters = {};
+    this.isSalesFilterPanelOpen = false;
+    this.reloadAll();
   }
 
-  return cleaned;
-}
+  private cleanSalesFilters(filters: SalesFilters): SalesFilters {
+    const cleaned: SalesFilters = {};
 
-hasActiveSalesFilters(): boolean {
-  return Object.keys(this.selectedSalesFilters).length > 0;
-}
+    if (filters.customerName && filters.customerName.trim() !== '') {
+      cleaned.customerName = filters.customerName;
+    }
+
+    if (filters.productKey !== null && filters.productKey !== undefined) {
+      cleaned.productKey = Number(filters.productKey);
+    }
+
+    if (filters.salespersonKey !== null && filters.salespersonKey !== undefined) {
+      cleaned.salespersonKey = Number(filters.salespersonKey);
+    }
+
+    if (filters.workstatusLabel && filters.workstatusLabel.trim() !== '') {
+      cleaned.workstatusLabel = filters.workstatusLabel;
+    }
+
+    if (filters.customerCategory && filters.customerCategory.trim() !== '') {
+      cleaned.customerCategory = filters.customerCategory;
+    }
+
+    if (filters.productCategory && filters.productCategory.trim() !== '') {
+      cleaned.productCategory = filters.productCategory;
+    }
+
+    return cleaned;
+  }
+
+  hasActiveSalesFilters(): boolean {
+    return Object.keys(this.selectedSalesFilters).length > 0;
+  }
 
   // ── Appliqueurs de données ─────────────────────────────────────────────────
 
-private hasPositiveValues(values: number[]): boolean {
-  return values.some((value) => Number(value ?? 0) > 0);
-}
+  private hasPositiveValues(values: number[]): boolean {
+    return values.some((value) => Number(value ?? 0) > 0);
+  }
 
   private applySalesKpis(data: SalesKpiResponse): void {
     const pos = 'positive' as const;
     const neg = 'negative' as const;
 
     this.kpis = [
-      { title: 'Total Revenue',           value: this.formatCurrency(data.totalRevenue),        trend: '', icon: 'payments',         trendType: pos },
-      { title: 'Number of Deals',         value: String(data.numberOfDeals),                    trend: '', icon: 'handshake',         trendType: pos },
-      { title: 'Win Rate',                value: `${this.formatNumber(data.winRate)}%`,          trend: '', icon: 'emoji_events',      trendType: pos },
-      { title: 'Avg Deal Value',          value: this.formatCurrency(data.averageDealValue),     trend: '', icon: 'monitoring',        trendType: pos },
-      { title: 'Sales Orders Count',      value: String(data.salesOrdersCount),                 trend: '', icon: 'shopping_cart',     trendType: pos },
-      { title: 'Outstanding Receivables', value: this.formatCurrency(data.outstandingReceivables), trend: '', icon: 'receipt_long',   trendType: neg },
-      { title: 'Active Customers',        value: String(data.activeCustomers),                  trend: '', icon: 'groups',            trendType: pos },
-      { title: 'Inactive Customers',      value: String(data.inactiveCustomers),                trend: '', icon: 'person_off',        trendType: neg },
-      { title: 'Avg Customer Value',      value: this.formatCurrency(data.averageCustomerValue),trend: '', icon: 'paid',              trendType: pos },
-      { title: 'Pipeline Deals',          value: String(data.pipelineDealsCount),               trend: '', icon: 'conversion_path',  trendType: pos },
-      { title: 'Pipeline Value',          value: this.formatCurrency(data.pipelineValue),       trend: '', icon: 'stacked_line_chart',trendType: pos },
-      { title: 'Conversion Rate',         value: `${this.formatNumber(data.conversionRate)}%`,  trend: '', icon: 'trending_up',       trendType: pos },
+      {
+        title: 'Total Revenue',
+        value: this.formatCurrency(data.totalRevenue),
+        trend: '',
+        icon: 'payments',
+        trendType: pos,
+      },
+      {
+        title: 'Number of Deals',
+        value: String(data.numberOfDeals),
+        trend: '',
+        icon: 'handshake',
+        trendType: pos,
+      },
+      {
+        title: 'Win Rate',
+        value: `${this.formatNumber(data.winRate)}%`,
+        trend: '',
+        icon: 'emoji_events',
+        trendType: pos,
+      },
+      {
+        title: 'Avg Deal Value',
+        value: this.formatCurrency(data.averageDealValue),
+        trend: '',
+        icon: 'monitoring',
+        trendType: pos,
+      },
+      {
+        title: 'Sales Orders Count',
+        value: String(data.salesOrdersCount),
+        trend: '',
+        icon: 'shopping_cart',
+        trendType: pos,
+      },
+      {
+        title: 'Outstanding Receivables',
+        value: this.formatCurrency(data.outstandingReceivables),
+        trend: '',
+        icon: 'receipt_long',
+        trendType: neg,
+      },
+      {
+        title: 'Active Customers',
+        value: String(data.activeCustomers),
+        trend: '',
+        icon: 'groups',
+        trendType: pos,
+      },
+      {
+        title: 'Inactive Customers',
+        value: String(data.inactiveCustomers),
+        trend: '',
+        icon: 'person_off',
+        trendType: neg,
+      },
+      {
+        title: 'Avg Customer Value',
+        value: this.formatCurrency(data.averageCustomerValue),
+        trend: '',
+        icon: 'paid',
+        trendType: pos,
+      },
+      {
+        title: 'Pipeline Deals',
+        value: String(data.pipelineDealsCount),
+        trend: '',
+        icon: 'conversion_path',
+        trendType: pos,
+      },
+      {
+        title: 'Pipeline Value',
+        value: this.formatCurrency(data.pipelineValue),
+        trend: '',
+        icon: 'stacked_line_chart',
+        trendType: pos,
+      },
+      {
+        title: 'Conversion Rate',
+        value: `${this.formatNumber(data.conversionRate)}%`,
+        trend: '',
+        icon: 'trending_up',
+        trendType: pos,
+      },
     ];
   }
 
-private applyRevenueTrend(data: { label: string; value: number }[]): void {
-  const labels = data.map(i => i.label);
-  const values = data.map(i => Number(i.value ?? 0));
+  private applyRevenueTrend(data: { label: string; value: number }[]): void {
+    const labels = data.map((i) => i.label);
+    const values = data.map((i) => Number(i.value ?? 0));
 
-  this.hasRevenueTrendData = this.hasPositiveValues(values);
+    this.hasRevenueTrendData = this.hasPositiveValues(values);
 
-  this.revenueChartData = {
-    labels,
-    datasets: [{ data: values, label: 'Revenue' }],
-  };
-}
+    this.revenueChartData = {
+      labels,
+      datasets: [{ data: values, label: 'Revenue' }],
+    };
+  }
 
-private applyPipelineDistribution(data: { status: string; count: number }[]): void {
-  const labels = data.map((item) => item.status);
-  const values = data.map((item) => Number(item.count ?? 0));
+  private applyPipelineDistribution(data: { status: string; count: number }[]): void {
+    // ← Trier du plus haut au plus bas
+    const sorted = [...data].sort((a, b) => b.count - a.count);
 
-  this.hasPipelineData = values.some((value) => value > 0);
+    const labels = sorted.map((item) => item.status);
+    const values = sorted.map((item) => Number(item.count ?? 0));
 
-  this.pipelineChartData = {
-    labels,
-    datasets: [
-      {
-        data: values,
-        label: 'Pipeline Deals',
-        backgroundColor: '#f59e0b',
-      },
-    ],
-  };
+    this.hasPipelineData = values.some((value) => value > 0);
 
-  console.log('PIPELINE DATA =', data);
-  console.log('PIPELINE VALUES =', values);
-  console.log('HAS PIPELINE DATA =', this.hasPipelineData);
-}
+    this.pipelineChartData = {
+      labels,
+      datasets: [
+        {
+          data: values,
+          label: 'Pipeline Deals',
+          backgroundColor: '#f59e0b',
+        },
+      ],
+    };
+  }
 
-private applyTopSalespersons(data: { name: string; amount: number }[]): void {
-  this.hasTopSalesData = data.length > 0 && data.some(i => Number(i.amount ?? 0) > 0);
+  private applyTopSalespersons(data: { name: string; amount: number }[]): void {
+    this.hasTopSalesData = data.length > 0 && data.some((i) => Number(i.amount ?? 0) > 0);
 
-  this.topSales = data.map(i => ({
-    name: i.name,
-    amount: this.formatCurrency(i.amount),
-  }));
-}
+    this.topSales = data.map((i) => ({
+      name: i.name,
+      amount: this.formatCurrency(i.amount),
+    }));
+  }
 
-private applyRecentOrders(data: { id: string; customer: string; date: string; amount: number; status: string }[]): void {
-  this.hasSalesOrdersData = data.length > 0;
+  private applyRecentOrders(
+    data: { id: string; customer: string; date: string; amount: number; status: string }[],
+  ): void {
+    this.hasSalesOrdersData = data.length > 0;
 
-  this.salesOrders = data.map(i => ({
-    id: i.id,
-    customer: i.customer,
-    date: i.date,
-    amount: this.formatCurrency(i.amount),
-    status: i.status,
-  }));
-}
+    this.salesOrders = data.map((i) => ({
+      id: i.id,
+      customer: i.customer,
+      date: i.date,
+      amount: this.formatCurrency(i.amount),
+      status: i.status,
+    }));
+  }
 
   getOrderStatusClass(status: string): string {
-  const normalizedStatus = (status || '').toLowerCase();
+    const normalizedStatus = (status || '').toLowerCase();
 
-  if (normalizedStatus === 'close' ) {
-    return 'status-close';
+    if (normalizedStatus === 'close') {
+      return 'status-close';
+    }
+
+    if (normalizedStatus === 'open') {
+      return 'status-open';
+    }
+
+    return 'status-default';
   }
 
-  if (normalizedStatus === 'open') {
-    return 'status-open';
+  private applyRevenueByProduct(data: { name: string; amount: number }[]): void {
+    const labels = data.map((i) => i.name);
+    const values = data.map((i) => Number(i.amount ?? 0));
+
+    this.hasRevenueByProductData = this.hasPositiveValues(values);
+
+    this.revenueByProductChartData = {
+      labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: CHART_DEFAULTS.primaryColor,
+        },
+      ],
+    };
   }
 
-  return 'status-default';
-}
+  private applyCustomerRetention(data: { label: string; value: number }[]): void {
+    const labels = data.map((i) => i.label);
+    const values = data.map((i) => Number(i.value ?? 0));
 
-private applyRevenueByProduct(data: { name: string; amount: number }[]): void {
-  const labels = data.map(i => i.name);
-  const values = data.map(i => Number(i.amount ?? 0));
+    this.hasRetentionData = this.hasPositiveValues(values);
 
-  this.hasRevenueByProductData = this.hasPositiveValues(values);
+    this.retentionChartData = {
+      labels,
+      datasets: [
+        {
+          data: data.map((i) => i.value),
+          label: 'Customer Retention Rate',
+          fill: true,
+          tension: 0.4,
 
-  this.revenueByProductChartData = {
-    labels,
-    datasets: [
-      {
-        data: values,
-        backgroundColor: CHART_DEFAULTS.primaryColor,
-      },
-    ],
-  };
-}
+          // Orange line
+          borderColor: '#f97316',
 
-private applyCustomerRetention(data: { label: string; value: number }[]): void {
-  const labels = data.map(i => i.label);
-  const values = data.map(i => Number(i.value ?? 0));
+          // Soft orange background
+          backgroundColor: 'rgba(249, 115, 22, 0.18)',
 
-  this.hasRetentionData = this.hasPositiveValues(values);
+          // Optional: nicer points
+          pointBackgroundColor: '#fb923c',
+          pointBorderColor: '#ffffff',
+          pointHoverBackgroundColor: '#ea580c',
+          pointHoverBorderColor: '#ffffff',
+        },
+      ],
+    };
+  }
 
-  this.retentionChartData = {
-    labels,
-    datasets: [{
-      data: data.map(i => i.value),
-      label: 'Customer Retention Rate',
-      fill: true,
-      tension: 0.4,
+  private applyHighValueDeals(data: { name: string; value: number }[]): void {
+    this.hasHighValueDealsData = data.length > 0 && data.some((i) => Number(i.value ?? 0) > 0);
 
-      // Orange line
-      borderColor: '#f97316',
-
-      // Soft orange background
-      backgroundColor: 'rgba(249, 115, 22, 0.18)',
-
-      // Optional: nicer points
-      pointBackgroundColor: '#fb923c',
-      pointBorderColor: '#ffffff',
-      pointHoverBackgroundColor: '#ea580c',
-      pointHoverBorderColor: '#ffffff',
-    }],
-  };
-}
-
-private applyHighValueDeals(data: { name: string; value: number }[]): void {
-  this.hasHighValueDealsData = data.length > 0 && data.some(i => Number(i.value ?? 0) > 0);
-
-  this.highValueDeals = data.map(i => ({
-    name: i.name,
-    value: this.formatCurrency(i.value),
-  }));
-}
+    this.highValueDeals = data.map((i) => ({
+      name: i.name,
+      value: this.formatCurrency(i.value),
+    }));
+  }
 
   // ── Utilitaires de date ────────────────────────────────────────────────────
 
@@ -505,13 +607,21 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
     let start: Date;
 
     switch (period) {
-      case '30days':  start = new Date(today); start.setDate(today.getDate() - 30);     break;
-      case '6months': start = new Date(today); start.setMonth(today.getMonth() - 6);    break;
-      case 'ytd':     start = new Date(today.getFullYear(), 0, 1);                       break;
+      case '30days':
+        start = new Date(today);
+        start.setDate(today.getDate() - 30);
+        break;
+      case '6months':
+        start = new Date(today);
+        start.setMonth(today.getMonth() - 6);
+        break;
+      case 'ytd':
+        start = new Date(today.getFullYear(), 0, 1);
+        break;
     }
 
     this.startDate = this.toIsoDate(start);
-    this.endDate   = this.toIsoDate(today);
+    this.endDate = this.toIsoDate(today);
   }
 
   private toIsoDate(date: Date): string {
@@ -520,12 +630,15 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
 
   // ── Formatage ──────────────────────────────────────────────────────────────
 
- formatCurrency(value: number | null | undefined): string {
-  return this.biFormat.formatCurrency(value, this.currency);
-}
+  formatCurrency(value: number | null | undefined): string {
+    return this.biFormat.formatCurrency(value, this.currency);
+  }
 
   private toShort(value: number): string {
-    return value.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
+    return value
+      .toFixed(2)
+      .replace('.', ',')
+      .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1 ');
   }
 
   formatNumber(value: number | null | undefined): string {
@@ -546,7 +659,7 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
     if (!element) return;
 
     this.isExportMenuOpen = false;
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 150));
 
     const canvas = await html2canvas(element, {
       scale: 2,
@@ -554,15 +667,15 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
       backgroundColor: '#f5f7fb',
     });
 
-    const pdf       = new jsPDF('p', 'mm', 'a4');
-    const pageW     = pdf.internal.pageSize.getWidth();
-    const pageH     = pdf.internal.pageSize.getHeight();
-    const imgW      = pageW;
-    const imgH      = (canvas.height * imgW) / canvas.width;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
     const imageData = canvas.toDataURL('image/png');
 
     let remaining = imgH;
-    let pos       = 0;
+    let pos = 0;
 
     pdf.addImage(imageData, 'PNG', 0, pos, imgW, imgH);
     remaining -= pageH;
@@ -585,10 +698,13 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
   exportAsCSV(): void {
     this.isExportMenuOpen = false;
 
-    const ws  = XLSX.utils.json_to_sheet(this.buildExportRows());
+    const ws = XLSX.utils.json_to_sheet(this.buildExportRows());
     const csv = XLSX.utils.sheet_to_csv(ws);
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-    const a   = Object.assign(document.createElement('a'), { href: url, download: 'crm-sales-data.csv' });
+    const a = Object.assign(document.createElement('a'), {
+      href: url,
+      download: 'crm-sales-data.csv',
+    });
 
     a.click();
     URL.revokeObjectURL(url);
@@ -602,36 +718,55 @@ private applyHighValueDeals(data: { name: string; value: number }[]): void {
 
   private buildExportRows(): object[] {
     return [
-      ...this.kpis.map(i => ({ section: 'KPIs', title: i.title, value: i.value, trend: i.trend })),
+      ...this.kpis.map((i) => ({
+        section: 'KPIs',
+        title: i.title,
+        value: i.value,
+        trend: i.trend,
+      })),
       ...this.topSales.map((item, index) => ({
         section: 'Top Sales Representatives',
         rank: index + 1,
         name: item.name,
-        amount: item.amount
+        amount: item.amount,
       })),
-      ...this.highValueDeals.map(i => ({ section: 'High Value Deals', name: i.name, value: i.value })),
-      ...this.salesOrders.map(i => ({ section: 'Orders and Invoices', ...i })),
-      ...this.regionalConversions.map(i => ({ section: 'Regional Conversion Rates', region: i.region, value: i.value, trend: i.trend })),
+      ...this.highValueDeals.map((i) => ({
+        section: 'High Value Deals',
+        name: i.name,
+        value: i.value,
+      })),
+      ...this.salesOrders.map((i) => ({ section: 'Orders and Invoices', ...i })),
+      ...this.regionalConversions.map((i) => ({
+        section: 'Regional Conversion Rates',
+        region: i.region,
+        value: i.value,
+        trend: i.trend,
+      })),
     ];
   }
 
   // ── Helpers charts ─────────────────────────────────────────────────────────
 
-  private emptyBarData(label: string, color : string = CHART_DEFAULTS.primaryColor): ChartData<'bar'> {
+  private emptyBarData(
+    label: string,
+    color: string = CHART_DEFAULTS.primaryColor,
+  ): ChartData<'bar'> {
     return { labels: [], datasets: [{ data: [], label, backgroundColor: color }] };
   }
 
   private emptyLineData(): ChartData<'line'> {
     return {
       labels: [],
-      datasets: [{
-        data: [],
-        label: 'Customer Retention Rate',
-        fill: true,
-        tension: 0.4,
-        borderColor: CHART_DEFAULTS.greenColor,
-        backgroundColor: CHART_DEFAULTS.greenAlpha,
-      }],
+      datasets: [
+        {
+          data: [],
+          label: 'Customer Retention Rate',
+          fill: true,
+          tension: 0.4,
+          borderColor: CHART_DEFAULTS.greenColor,
+          backgroundColor: CHART_DEFAULTS.greenAlpha,
+        },
+      ],
     };
   }
 }

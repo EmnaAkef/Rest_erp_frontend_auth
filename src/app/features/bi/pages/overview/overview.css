@@ -5,7 +5,58 @@
    position: relative;
 }
 
+.top-kpi-grid ::ng-deep app-kpi-card .kpi-card {
+  min-height: 145px;
+  border-radius: 10px;
+  border: 1px solid #edf1f7;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.03);
+  padding: 18px;
+}
 
+.top-kpi-grid ::ng-deep app-kpi-card .kpi-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9aa3b2;
+  margin-bottom: 10px;
+}
+
+.top-kpi-grid ::ng-deep app-kpi-card .kpi-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.top-kpi-grid ::ng-deep app-kpi-card .kpi-description {
+  font-size: 11px;
+  color: #9aa3b2;
+  margin-top: 8px;
+}
+
+.top-kpi-grid ::ng-deep app-kpi-card .kpi-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.top-kpi-grid ::ng-deep app-kpi-card .trend-positive {
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.top-kpi-grid ::ng-deep app-kpi-card .trend-negative {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 12px;
+}
 .dashboard-loading-overlay {
   position: absolute;
   inset: 0;
@@ -222,19 +273,22 @@
 
 .financial-grid {
   display: grid;
-  grid-template-columns: 2.1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 18px;
+  align-items: stretch;
 }
 .financial-grid .large-card {
-  height: 560px;
+  height: 500px;
   display: flex;
   flex-direction: column;
 }
-
+.table-card {
+  margin-top: -6px;
+}
 .financial-grid .large-card .chart-container {
   flex: 1;
   height: 100%;
-  min-height: 390px;
+  min-height: 300px;
 }
 .side-summary-column {
   display: flex;

@@ -189,7 +189,7 @@
             baseChart
             [data]="pipelineFunnelData"
             [type]="pipelineFunnelType"
-            [options]="commonLineOptions">
+            [options]="pipelineFunnelOptions">
           </canvas>
         </div>
       </div>
@@ -403,7 +403,10 @@
       }
     </div>
   </section>
-
+  <app-section-title
+    title="Executive Summary Ledger"
+    subtitle="Consolidated raw metrics by reporting period">
+  </app-section-title>
   <div class="card table-card">
     <table>
       <thead>
@@ -463,8 +466,7 @@
 
     <div class="table-footer">
       <small>Last data synchronization: Today at 08:14 AM (UTC)</small>
-
-      <button class="download-btn" (click)="exportAsCSV()">
+      <button class="download-btn" (click)="exportExecutiveLedgerAsCSV()">
         Download Full CSV Report
       </button>
     </div>

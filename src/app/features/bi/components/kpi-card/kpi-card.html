@@ -1,19 +1,31 @@
-<div class="kpi-card">
+<div class="kpi-card" [class.sales-card]="variant === 'sales'">
   <div class="kpi-top">
-    <div class="icon-box">
+    <div class="icon-box" [class.sales-icon-box]="variant === 'sales'">
       <span class="material-symbols-outlined">{{ icon }}</span>
     </div>
 
-    @if (trend) {
+    @if (trend && variant !== 'sales') {
       <div
         class="trend"
         [class.positive]="trendType === 'positive'"
-        [class.negative]="trendType === 'negative'">
+        [class.negative]="trendType === 'negative'"
+        [class.neutral]="trendType === 'neutral'">
         {{ trend }}
       </div>
     }
   </div>
 
-  <div class="kpi-title">{{ title }}</div>
-  <div class="kpi-value">{{ value }}</div>
+  <div class="kpi-title" [class.sales-title]="variant === 'sales'">
+    {{ title }}
+  </div>
+
+  <div class="kpi-value" [class.sales-value]="variant === 'sales'">
+    {{ value }}
+  </div>
+
+  @if (subtitle) {
+    <div class="kpi-subtitle" [class.sales-subtitle]="variant === 'sales'">
+      {{ subtitle }}
+    </div>
+  }
 </div>

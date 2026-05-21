@@ -1,14 +1,8 @@
 <div class="dashboard-page" #dashboardContent>
   @if (isDashboardLoading) {
-    <div class="dashboard-loading-overlay" data-html2canvas-ignore="true">
-      <div class="dashboard-loader-card">
-        <div class="loader-spinner"></div>
-
-        <div class="loader-text">
-          <h3>Loading dashboard</h3>
-          <p>Preparing your financial analytics...</p>
-        </div>
-      </div>
+    <div class="dashboard-top-loader" data-html2canvas-ignore="true">
+      <div class="top-loader-spinner"></div>
+      <span>Updating dashboard...</span>
     </div>
   }
   <div class="page-header">
@@ -474,7 +468,7 @@
         subtitle="Summary of VAT collected, payable, and quarterly tax liabilities.">
       </app-section-title>
 
-      <div class="kpi-grid kpi-grid-3">
+      <div class="kpi-grid kpi-grid-3 tax-kpi-grid">
         @for (item of taxKpis; track item.title) {
           <app-kpi-card
             [title]="item.title"

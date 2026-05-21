@@ -134,7 +134,7 @@
 
           <div class="filter-actions">
             <button class="filter-reset-btn" (click)="clearHrFilters()">
-              Clear
+              Reset
             </button>
 
             <button class="filter-apply-btn" (click)="applyHrFilters()">
@@ -217,7 +217,9 @@
 
   <app-section-title title="Employees by Department"></app-section-title>
 
-  <div class="chart-card" [style.height.px]="hasEmployeesByDepartmentData ? employeesByDepartmentChartHeight : 260">
+  <div
+  class="chart-card employees-department-card"
+  [style.height.px]="hasEmployeesByDepartmentData ? employeesByDepartmentChartHeight : 260">
 
     @if (hasEmployeesByDepartmentData) {
     <canvas baseChart [data]="employeesByDepartmentChartData" [type]="employeesByDepartmentChartType"
