@@ -27,7 +27,7 @@ export class RegisterComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
   ) {}
 
   onPhotoSelected(event: Event): void {
@@ -42,7 +42,7 @@ export class RegisterComponent {
     const file = input.files[0];
 
     if (!file.type.startsWith('image/')) {
-      this.errorMessage.set('Veuillez sélectionner une image valide.');
+      this.errorMessage.set('Please select a valid image.');
       return;
     }
 
@@ -60,7 +60,7 @@ export class RegisterComponent {
     this.successMessage.set(null);
 
     if (!this.firstName.trim() || !this.lastName.trim() || !this.email.trim() || !this.companyName.trim()) {
-      this.errorMessage.set('Veuillez remplir tous les champs obligatoires.');
+      this.errorMessage.set('Please fill in all required fields.');
       return;
     }
 
@@ -87,7 +87,7 @@ export class RegisterComponent {
       },
       error: (error) => {
         this.loading.set(false);
-        this.errorMessage.set(error?.error || 'Erreur lors de l’envoi de la demande.');
+        this.errorMessage.set(error?.error || 'An error occurred while sending the request.');
       },
     });
   }

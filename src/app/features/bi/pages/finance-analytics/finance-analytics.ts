@@ -90,6 +90,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authService.refreshCurrentUser();
+    this.authService.syncSelectedCompanyKeyFromStorage();
     this.updatePeriodDates('last6months');
 
     this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {

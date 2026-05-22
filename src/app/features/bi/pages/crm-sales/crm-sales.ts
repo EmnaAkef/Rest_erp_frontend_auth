@@ -215,6 +215,7 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     }
 
     this.authService.refreshCurrentUser();
+    this.authService.syncSelectedCompanyKeyFromStorage();
     this.updateDateRange(this.selectedPeriod);
 
     this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {

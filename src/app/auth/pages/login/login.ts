@@ -21,14 +21,14 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) { }
+    private router: Router,
+  ) {}
 
   login(): void {
     this.errorMessage.set(null);
 
     if (!this.email || !this.password) {
-      this.errorMessage.set('Veuillez saisir votre email et votre mot de passe.');
+      this.errorMessage.set('Please enter your email and password.');
       return;
     }
 
@@ -44,7 +44,7 @@ export class LoginComponent {
       },
       error: () => {
         this.loading.set(false);
-        this.errorMessage.set('Email ou mot de passe incorrect.');
+        this.errorMessage.set('Incorrect email or password.');
       },
     });
   }

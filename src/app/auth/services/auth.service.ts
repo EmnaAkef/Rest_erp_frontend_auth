@@ -126,18 +126,19 @@ export class AuthService {
   }
 
   setSelectedCompanyKey(companyKey: number | null): void {
-    this.selectedCompanyKeySubject.next(companyKey);
-
     if (!this.isBrowser()) {
+      this.selectedCompanyKeySubject.next(companyKey);
       return;
     }
 
     if (companyKey === null) {
       localStorage.removeItem('selectedCompanyKey');
+      this.selectedCompanyKeySubject.next(null);
       return;
     }
 
     localStorage.setItem('selectedCompanyKey', String(companyKey));
+    this.selectedCompanyKeySubject.next(companyKey);
   }
 
   getSelectedCompanyKey(): number | null {
@@ -156,14 +157,20 @@ export class AuthService {
     return Number.isNaN(companyKey) ? null : companyKey;
   }
 
-  clearSelectedCompanyKey(): void {
-    this.selectedCompanyKeySubject.next(null);
+  syncSelectedCompanyKeyFromStorage(): number | null {
+    const companyKey = this.getSelectedCompanyKey();
+    this.selectedCompanyKeySubject.next(companyKey);
+    return companyKey;
+  }
 
+  clearSelectedCompanyKey(): void {
     if (!this.isBrowser()) {
+      this.selectedCompanyKeySubject.next(null);
       return;
     }
 
     localStorage.removeItem('selectedCompanyKey');
+    this.selectedCompanyKeySubject.next(null);
   }
 
   logout(): void {

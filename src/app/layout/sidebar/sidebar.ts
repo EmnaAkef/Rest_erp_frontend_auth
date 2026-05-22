@@ -29,7 +29,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.authService.refreshCurrentUser();
-    this.selectedCompanyKey = this.authService.getSelectedCompanyKey();
+    this.selectedCompanyKey = this.authService.syncSelectedCompanyKeyFromStorage();
 
     this.selectedCompanyKeySubscription = this.authService.selectedCompanyKey$.subscribe(
       (companyKey) => {

@@ -1,6 +1,6 @@
 <div class="dashboard-page" #dashboardContent>
   @if (!canDisplayDashboard()) {
-    <div class="no-data">
+    <div class="company-required-state">
       <span class="material-symbols-outlined">business</span>
       <p>Which company’s dashboard do you want to visit? Please select a company from the sidebar.</p>
     </div>
@@ -49,10 +49,7 @@
 
       <div class="header-divider"></div>
 
-      <button class="header-action-btn">
-        <span class="material-symbols-outlined btn-icon">filter_alt</span>
-        <span>Filters</span>
-      </button>
+    
 
       <div class="export-wrapper">
         <button class="header-export-btn" (click)="toggleExportMenu()">

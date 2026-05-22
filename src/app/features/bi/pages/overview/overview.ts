@@ -90,6 +90,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
   this.authService.refreshCurrentUser();
+  this.authService.syncSelectedCompanyKeyFromStorage();
 
   this.updatePeriodDates('last6months');
 
@@ -494,8 +495,8 @@ ngOnDestroy(): void {
   private applyCashSummary(data: OverviewCashSummaryItem): void {
     const cashBalance = Number(data.cashBalance ?? 0);
     const inflow = Number(data.inflow ?? 0);
-    const outflow = Number(data.outflow ?? 0);
-    const netCashFlow = Number(data.netCashFlow ?? 0);
+    const outflow = Math.abs(Number(data.outflow ?? 0));
+    const netCashFlow = inflow - outflow;
 
     this.cashBalanceDisplay = this.formatCompactCurrency(cashBalance);
 
