@@ -1,6 +1,7 @@
 .app-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  background: #f5f7fb;
 }
 
 .main-content {
@@ -9,10 +10,8 @@
   min-height: 100vh;
 }
 
-
-
 .page-container {
+  min-height: 100vh;
   padding: 24px;
   background: #f5f7fb;
-  flex: 1;
 }

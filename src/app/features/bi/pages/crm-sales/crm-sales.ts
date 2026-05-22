@@ -1,7 +1,7 @@
 
 import {
   Component, ElementRef, OnInit, OnDestroy,
-  ViewChild, inject, signal, computed
+  ViewChild, inject, signal, computed,PLATFORM_ID 
 } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData , ChartOptions, TooltipItem } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser  } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
@@ -19,6 +19,7 @@ import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
 import { SalesService , SalesFilters, SalesFilterOption } from '../../services/sales.service';
 import { SalesKpiResponse } from '../../models/sales-kpi-response';
 import { BiFormatService } from '../../services/bi-format.service';
+import { AuthService } from '../../../../auth/services/auth.service';
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -89,7 +90,10 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   // ── Refs & DI ──────────────────────────────────────────────────────────────
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
   private readonly salesService = inject(SalesService);
+  private readonly authService = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
+  private readonly reloadCancel$ = new Subject<void>();
+  private readonly platformId = inject(PLATFORM_ID);
 
   // ── State ──────────────────────────────────────────────────────────────────
   selectedPeriod: '30days' | '6months' | 'ytd' = '6months';
@@ -206,14 +210,27 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
-  this.updateDateRange(this.selectedPeriod);
-  this.loadFilterOptions();
-  this.reloadAll();
-}
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.authService.refreshCurrentUser();
+    this.updateDateRange(this.selectedPeriod);
+
+    this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      if (this.canDisplayDashboard()) {
+        this.loadFilterOptions();
+        this.reloadAll();
+      } else {
+        this.clearSalesData();
+      }
+    });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.reloadCancel$.complete();
   }
 
   // ── Période ────────────────────────────────────────────────────────────────
@@ -221,7 +238,11 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
   setPeriod(period: '30days' | '6months' | 'ytd'): void {
     this.selectedPeriod = period;
     this.updateDateRange(period);
-    this.reloadAll();
+    if (this.canDisplayDashboard()) {
+      this.reloadAll();
+    } else {
+      this.clearSalesData();
+    }
   }
 
   // ── Reload central ─────────────────────────────────────────────────────────
@@ -231,6 +252,13 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
    * Les appels indépendants (retention, highValueDeals) sont lancés en parallèle.
    */
   private reloadAll(): void {
+  this.reloadCancel$.next();
+
+  if (!this.canDisplayDashboard()) {
+    this.clearSalesData();
+    return;
+  }
+
   this.isDashboardLoading = true;
 
   const filters = this.selectedSalesFilters;
@@ -246,6 +274,7 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     highDeals: this.salesService.getHighValueDeals(this.startDate, this.endDate, filters),
   })
     .pipe(
+      takeUntil(this.reloadCancel$),
       takeUntil(this.destroy$),
       finalize(() => (this.isDashboardLoading = false)),
     )
@@ -267,6 +296,10 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
 }
 
 private loadFilterOptions(): void {
+  if (!this.canDisplayDashboard()) {
+    return;
+  }
+
   forkJoin({
     customers: this.salesService.getCustomerOptions(),
     products: this.salesService.getProductOptions(),
@@ -346,6 +379,31 @@ private cleanSalesFilters(filters: SalesFilters): SalesFilters {
 
 hasActiveSalesFilters(): boolean {
   return Object.keys(this.selectedSalesFilters).length > 0;
+}
+
+canDisplayDashboard(): boolean {
+  return this.authService.canLoadCompanyDashboard();
+}
+
+private clearSalesData(): void {
+  this.reloadCancel$.next();
+  this.isDashboardLoading = false;
+  this.currency = '';
+  this.kpis = [];
+  this.topSales = [];
+  this.salesOrders = [];
+  this.highValueDeals = [];
+  this.hasRevenueTrendData = false;
+  this.hasPipelineData = false;
+  this.hasTopSalesData = false;
+  this.hasHighValueDealsData = false;
+  this.hasSalesOrdersData = false;
+  this.hasRevenueByProductData = false;
+  this.hasRetentionData = false;
+  this.revenueChartData = this.emptyBarData('Revenue');
+  this.pipelineChartData = this.emptyBarData('Pipeline Deals');
+  this.retentionChartData = this.emptyLineData();
+  this.revenueByProductChartData = this.emptyBarData('Revenue by Product');
 }
 
   // ── Appliqueurs de données ─────────────────────────────────────────────────

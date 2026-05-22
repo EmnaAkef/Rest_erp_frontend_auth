@@ -1,23 +1,83 @@
 <div class="sidebar">
-  <div class="logo">
-    <img src="/images/rest-erp-logo.png" alt="REST ERP Logo" />
+  <div class="sidebar-top">
+    <div class="logo">
+      <img src="/images/rest-erp-logo.png" alt="REST ERP Logo" />
+    </div>
+
+    @if (isSuperAdmin()) {
+  <div class="company-selector">
+    <label>Company dashboard</label>
+
+    <select [value]="selectedCompanyKey !== null ? selectedCompanyKey.toString() : ''" (change)="onCompanyChange($event)">
+      <option value="">Select company</option>
+
+      @for (company of companies(); track company.companyKey) {
+        <option [value]="company.companyKey">
+          {{ company.companyName }}
+        </option>
+      }
+    </select>
+
+    @if (selectedCompanyKey === null) {
+      <small>Choose a company to view its dashboards.</small>
+    }
+  </div>
+}
+
+    <ul class="menu">
+      <li routerLink="/overview" routerLinkActive="active">
+        <span>Overview</span>
+      </li>
+
+      <li routerLink="/hr-analytics" routerLinkActive="active">
+        <span>HR Analytics</span>
+      </li>
+
+      <li routerLink="/finance-analytics" routerLinkActive="active">
+        <span>Finance Analytics</span>
+      </li>
+
+      <li routerLink="/crm-sales" routerLinkActive="active">
+        <span>CRM & Sales</span>
+      </li>
+
+      @if (canManageRegistrationRequests()) {
+        <li routerLink="/admin/registration-requests" routerLinkActive="active">
+          <span>Registration Requests</span>
+        </li>
+      }
+    </ul>
   </div>
 
-  <ul class="menu">
-    <li routerLink="/overview" routerLinkActive="active">
-      <span>Overview</span>
-    </li>
+  @if (user(); as currentUser) {
+  <div class="sidebar-profile-wrapper">
+    <button class="profile-main" (click)="toggleProfileMenu()">
+      <div class="avatar">
+        @if (currentUser.profileImageUrl) {
+        <img [src]="'http://localhost:8080' + currentUser.profileImageUrl" alt="Profile" />
+        } @else {
+        {{ getInitial() }}
+        }
+      </div>
 
-    <li routerLink="/hr-analytics" routerLinkActive="active">
-      <span>HR Analytics</span>
-    </li>
+      <div class="profile-info">
+        <span class="name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+        <span class="company">{{ currentUser.companyName }}</span>
+      </div>
 
-    <li routerLink="/finance-analytics" routerLinkActive="active">
-      <span>Finance Analytics</span>
-    </li>
+      <span class="material-symbols-outlined profile-arrow">
+        {{ isProfileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+      </span>
+    </button>
 
-    <li routerLink="/crm-sales" routerLinkActive="active">
-      <span>CRM & Sales</span>
-    </li>
-  </ul>
+    @if (isProfileMenuOpen) {
+      <div class="profile-menu">
+        <button class="profile-menu-item" type="button" (click)="logout()">
+          <span class="material-symbols-outlined">logout</span>
+          <span>Logout</span>
+        </button>
+      </div>
+    }
+  </div>
+  }
 </div>

@@ -1,4 +1,10 @@
 <div class="dashboard-page" #dashboardContent>
+  @if (!canDisplayDashboard()) {
+    <div class="no-data">
+      <span class="material-symbols-outlined">business</span>
+      <p>Which company’s dashboard do you want to visit? Please select a company from the sidebar.</p>
+    </div>
+  } @else {
   @if (isDashboardLoading) {
     <div class="dashboard-loading-overlay" data-html2canvas-ignore="true">
       <div class="dashboard-loader-card">
@@ -570,4 +576,5 @@
       </div>
     </section>
   </div>
+  }
 </div>

@@ -1,0 +1,50 @@
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Welcome back</h1>
+      <p>Connectez-vous pour accéder à vos dashboards BI.</p>
+    </div>
+
+    <form (ngSubmit)="login()" class="login-form">
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          name="email"
+          [(ngModel)]="email"
+          placeholder="exemple@email.com"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input
+          type="password"
+          name="password"
+          [(ngModel)]="password"
+          placeholder="Votre mot de passe"
+          autocomplete="current-password"
+        />
+      </div>
+
+      @if (errorMessage()) {
+        <div class="error-message">
+          {{ errorMessage() }}
+        </div>
+      }
+
+      <button type="submit" [disabled]="loading()">
+        @if (loading()) {
+          Connexion...
+        } @else {
+          Se connecter
+        }
+      </button>
+      <p class="register-link">
+        Vous n’avez pas encore de compte ?
+        <a routerLink="/register">Envoyer une demande</a>
+      </p>
+    </form>
+  </div>
+</div>

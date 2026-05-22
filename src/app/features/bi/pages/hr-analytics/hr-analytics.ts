@@ -1,9 +1,20 @@
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  inject,
+  signal,
+  computed,
+  PLATFORM_ID,
+} from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
 import { SectionTitleComponent } from '../../components/section-title/section-title';
@@ -13,9 +24,10 @@ import { HrService, HrFilters, HrFilterOption } from '../../services/hr.service'
 import { HrKpiResponse } from '../../models/hr-kpi-response';
 import { BiFormatService } from '../../services/bi-format.service';
 
-import { Observable, forkJoin } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { Observable, Subject, forkJoin } from 'rxjs';
+import { finalize, takeUntil } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../../auth/services/auth.service';
 
 Chart.register(...registerables);
 
@@ -26,11 +38,14 @@ Chart.register(...registerables);
   styleUrl: './hr-analytics.css',
   standalone: true,
 })
-export class HrAnalyticsComponent implements OnInit {
+export class HrAnalyticsComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
 
   private hrService = inject(HrService);
   private biFormat = inject(BiFormatService);
+  private authService = inject(AuthService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroy$ = new Subject<void>();
   currency = '';
 
   // ── HR filters ───────────────────────────────────────────────────────────────
@@ -361,11 +376,34 @@ export class HrAnalyticsComponent implements OnInit {
     );
   }
   ngOnInit(): void {
-    this.loadFilterOptions();
-    this.setPeriod('6months');
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.authService.refreshCurrentUser();
+    this.updateDateRange(this.selectedPeriod);
+
+    this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      if (this.canDisplayDashboard()) {
+        this.loadFilterOptions();
+        this.reloadAll();
+      } else {
+        this.clearHrData();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private reloadAll(): void {
+    if (!this.canDisplayDashboard()) {
+      this.clearHrData();
+      return;
+    }
+
     this.loadHrKpis();
     this.loadHeadcountTrend();
     this.loadAttendanceTrend();
@@ -382,10 +420,18 @@ export class HrAnalyticsComponent implements OnInit {
 
     console.log('RH period:', period, this.startDate, this.endDate);
 
-    this.reloadAll();
+    if (this.canDisplayDashboard()) {
+      this.reloadAll();
+    } else {
+      this.clearHrData();
+    }
   }
 
   private loadFilterOptions(): void {
+    if (!this.canDisplayDashboard()) {
+      return;
+    }
+
     forkJoin({
       departments: this.hrService.getDepartmentOptions(),
       employees: this.hrService.getEmployeeOptions(),
@@ -889,6 +935,35 @@ export class HrAnalyticsComponent implements OnInit {
     this.selectedHrFilters = {};
     this.isHrFilterPanelOpen = false;
     this.reloadAll();
+  }
+
+  canDisplayDashboard(): boolean {
+    return this.authService.canLoadCompanyDashboard();
+  }
+
+  private clearHrData(): void {
+    this.dashboardLoadingRequests = 0;
+    this.isDashboardLoading = false;
+    this.currency = '';
+    this.workforceKpis = [];
+    this.attendanceKpis = [];
+    this.payrollKpis = [];
+    this.recruitmentKpis = [];
+    this.footerKpis = [];
+    this.upcomingBirthdays = [];
+    this.hasHiringFunnelData = false;
+    this.hasHeadcountData = false;
+    this.hasTenureData = false;
+    this.hasEmployeesByDepartmentData = false;
+    this.hasAttendanceTrendData = false;
+    this.hasSalaryBenchmarkData = false;
+    this.hasUpcomingBirthdaysData = false;
+    this.headcountChartData = { labels: [], datasets: [] };
+    this.tenureChartData = { labels: [], datasets: [] };
+    this.attendanceTrendChartData = { labels: [], datasets: [] };
+    this.salaryBenchmarkChartData = { labels: [], datasets: [] };
+    this.hiringFunnelChartData = { labels: [], datasets: [] };
+    this.employeesByDepartmentChartData = { labels: [], datasets: [] };
   }
 
   private cleanHrFilters(filters: HrFilters): HrFilters {

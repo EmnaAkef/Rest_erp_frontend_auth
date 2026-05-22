@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
@@ -25,8 +25,10 @@ import {
 } from '../../models/overview-kpi-response';
 import { RouterLink } from '@angular/router';
 
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
+import { AuthService } from '../../../../auth/services/auth.service';
+
 
 Chart.register(...registerables);
 type TrendType = 'positive' | 'negative' | 'neutral';
@@ -46,7 +48,7 @@ interface OverviewKpiCard {
   styleUrl: './overview.css',
   standalone: true,
 })
-export class OverviewComponent implements OnInit {
+export class OverviewComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
   companyCurrency = 'USD';
   isExportMenuOpen = false;
@@ -55,6 +57,7 @@ export class OverviewComponent implements OnInit {
 
   isDashboardLoading = false;
   private dashboardLoadingRequests = 0;
+  private companyChangeSubscription?: Subscription;
 
   selectedPeriod: 'last30days' | 'last6months' | 'yearToDate' = 'last6months';
 
@@ -80,11 +83,28 @@ export class OverviewComponent implements OnInit {
   }[] = [];
 
   retentionNote = 'Customer retention based on active customers.';
-  constructor(private overviewKpiService: OverviewKpiService) {}
+  constructor(
+  private overviewKpiService: OverviewKpiService,
+  private authService: AuthService
+) {}
 
   ngOnInit(): void {
-    this.setPeriod('last6months');
-  }
+  this.authService.refreshCurrentUser();
+
+  this.updatePeriodDates('last6months');
+
+  this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
+    if (this.authService.canLoadCompanyDashboard()) {
+      this.loadAllOverviewData();
+    } else {
+      this.clearOverviewData();
+    }
+  });
+}
+
+ngOnDestroy(): void {
+  this.companyChangeSubscription?.unsubscribe();
+}
 
   topKpis: OverviewKpiCard[] = [];
 
@@ -747,6 +767,82 @@ export class OverviewComponent implements OnInit {
     });
   }
 
+  private updatePeriodDates(period: 'last30days' | 'last6months' | 'yearToDate'): void {
+  this.selectedPeriod = period;
+
+  const today = new Date();
+  const start = new Date(today);
+
+  if (period === 'last30days') {
+    start.setDate(today.getDate() - 30);
+  }
+
+  if (period === 'last6months') {
+    start.setMonth(today.getMonth() - 6);
+  }
+
+  if (period === 'yearToDate') {
+    start.setMonth(0);
+    start.setDate(1);
+  }
+
+  this.startDate = this.formatDate(start);
+  this.endDate = this.formatDate(today);
+}
+
+private loadAllOverviewData(): void {
+  if (!this.canDisplayDashboard()) {
+    this.clearOverviewData();
+    return;
+  }
+
+  this.loadOverviewKpis();
+  this.loadFinancialTrend();
+  this.loadCashSummary();
+  this.loadSalesPipelineFunnel();
+  this.loadDealStatus();
+  this.loadTopSalesPerformers();
+  this.loadAttendanceTrend();
+  this.loadDepartmentDistribution();
+  this.loadCustomerRetention();
+  this.loadTopCustomersByRevenue();
+  this.loadOperationalAlerts();
+  this.loadExecutiveLedger();
+}
+
+private clearOverviewData(): void {
+  this.dashboardLoadingRequests = 0;
+  this.isDashboardLoading = false;
+  this.loadingKpis = false;
+
+  this.topKpis = [];
+  this.topSalesPerformers = [];
+  this.departmentDistribution = [];
+  this.customerRevenue = [];
+  this.alertCards = [];
+  this.executiveLedger = [];
+
+  this.financialChartData = { labels: [], datasets: [] };
+  this.financialLineData = { labels: [], datasets: [] };
+  this.pipelineFunnelData = { labels: [], datasets: [] };
+  this.dealStatusData = { labels: [], datasets: [] };
+  this.attendanceTrendData = { labels: [], datasets: [] };
+  this.attendanceTrendMiniData = { labels: [], datasets: [] };
+  this.retentionData = {
+    labels: ['Retention', 'Inactive'],
+    datasets: [
+      {
+        data: [0, 100],
+        backgroundColor: ['#e58e2b', '#f8e0c3'],
+        hoverBackgroundColor: ['#e58e2b', '#f8e0c3'],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  this.kpiErrorMessage = 'Please select a company from the sidebar to view its dashboard.';
+}
+
   private applyTopCustomersByRevenue(data: OverviewTopCustomerItem[]): void {
     this.customerRevenue = data.map((item) => ({
       name: item.customerName,
@@ -985,39 +1081,17 @@ export class OverviewComponent implements OnInit {
   }
 
   setPeriod(period: 'last30days' | 'last6months' | 'yearToDate'): void {
-    this.selectedPeriod = period;
+  this.updatePeriodDates(period);
 
-    const today = new Date();
-    const start = new Date(today);
+  if (this.authService.canLoadCompanyDashboard()) {
+    this.loadAllOverviewData();
+  } else {
+    this.clearOverviewData();
+  }
+}
 
-    if (period === 'last30days') {
-      start.setDate(today.getDate() - 30);
-    }
-
-    if (period === 'last6months') {
-      start.setMonth(today.getMonth() - 6);
-    }
-
-    if (period === 'yearToDate') {
-      start.setMonth(0);
-      start.setDate(1);
-    }
-
-    this.startDate = this.formatDate(start);
-    this.endDate = this.formatDate(today);
-
-    this.loadOverviewKpis();
-    this.loadFinancialTrend();
-    this.loadCashSummary();
-    this.loadSalesPipelineFunnel();
-    this.loadDealStatus();
-    this.loadTopSalesPerformers();
-    this.loadAttendanceTrend();
-    this.loadDepartmentDistribution();
-    this.loadCustomerRetention();
-    this.loadTopCustomersByRevenue();
-    this.loadOperationalAlerts();
-    this.loadExecutiveLedger();
+  canDisplayDashboard(): boolean {
+    return this.authService.canLoadCompanyDashboard();
   }
 
   private loadOverviewKpis(): void {

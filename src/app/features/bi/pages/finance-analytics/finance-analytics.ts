@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
@@ -18,9 +18,10 @@ import {
 import { FinanceFilterOptionsResponse } from '../../services/finance-kpi.service';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
 import { BiFormatService } from '../../services/bi-format.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../../../auth/services/auth.service';
 Chart.register(...registerables);
 
 type TrendType = 'positive' | 'negative' | 'neutral';
@@ -43,7 +44,7 @@ interface FinanceKpiCard {
   templateUrl: './finance-analytics.html',
   styleUrl: './finance-analytics.css',
 })
-export class FinanceAnalyticsComponent implements OnInit {
+export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
   hasRevenueProfitTrendData = false;
   hasCashFlowData = false;
@@ -56,6 +57,7 @@ export class FinanceAnalyticsComponent implements OnInit {
   kpiErrorMessage = '';
   isDashboardLoading = false;
   private dashboardLoadingRequests = 0;
+  private companyChangeSubscription?: Subscription;
   selectedPeriod: 'last30days' | 'last6months' | 'yearToDate' = 'last6months';
 
   startDate = '';
@@ -81,11 +83,27 @@ export class FinanceAnalyticsComponent implements OnInit {
     date: string;
   }[] = [];
 
-  constructor(private financeKpiService: FinanceKpiService) {}
+  constructor(
+    private financeKpiService: FinanceKpiService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
-    this.loadFinanceFilterOptions();
-    this.setPeriod('last6months');
+    this.authService.refreshCurrentUser();
+    this.updatePeriodDates('last6months');
+
+    this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
+      if (this.canDisplayDashboard()) {
+        this.loadFinanceFilterOptions();
+        this.reloadAll();
+      } else {
+        this.clearFinanceData();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.companyChangeSubscription?.unsubscribe();
   }
   // ── Finance filters ─────────────────────────────────────────────────────────
   isFinanceFilterOpen = false;
@@ -174,6 +192,10 @@ export class FinanceAnalyticsComponent implements OnInit {
     { label: 'Office Equipment', value: 'Office Equipment' },
   ];
   private loadFinanceFilterOptions(): void {
+    if (!this.canDisplayDashboard()) {
+      return;
+    }
+
     this.financeKpiService.getFinanceFilterOptions().subscribe({
       next: (data) => {
         this.financeFilterOptions = {
@@ -340,6 +362,11 @@ export class FinanceAnalyticsComponent implements OnInit {
     this.reloadAll();
   }
   private reloadAll(): void {
+    if (!this.canDisplayDashboard()) {
+      this.clearFinanceData();
+      return;
+    }
+
     this.loadFinanceKpis();
     this.loadRevenueProfitTrend();
     this.loadCashFlowTrend();
@@ -508,6 +535,16 @@ export class FinanceAnalyticsComponent implements OnInit {
   // ── Period selection ───────────────────────────────────────────────────────
 
   setPeriod(period: 'last30days' | 'last6months' | 'yearToDate'): void {
+    this.updatePeriodDates(period);
+
+    if (this.canDisplayDashboard()) {
+      this.reloadAll();
+    } else {
+      this.clearFinanceData();
+    }
+  }
+
+  private updatePeriodDates(period: 'last30days' | 'last6months' | 'yearToDate'): void {
     this.selectedPeriod = period;
 
     const today = new Date();
@@ -526,8 +563,39 @@ export class FinanceAnalyticsComponent implements OnInit {
 
     this.startDate = this.formatDate(start);
     this.endDate = this.formatDate(today);
+  }
 
-    this.reloadAll();
+  canDisplayDashboard(): boolean {
+    return this.authService.canLoadCompanyDashboard();
+  }
+
+  private clearFinanceData(): void {
+    this.dashboardLoadingRequests = 0;
+    this.isDashboardLoading = false;
+    this.loadingKpis = false;
+    this.kpiErrorMessage = 'Please select a company from the sidebar to view its dashboard.';
+
+    this.overviewKpis = [];
+    this.cashKpis = [];
+    this.receivableKpis = [];
+    this.taxKpis = [];
+    this.outstandingInvoices = [];
+    this.taxPayments = [];
+    this.assetDistributionLegend = [];
+    this.nextFilingDates = [];
+    this.currency = '';
+    this.totalLiabilitiesDisplay = '0';
+    this.assetValueDisplay = '0';
+    this.depreciationExpenseDisplay = '0';
+    this.hasRevenueProfitTrendData = false;
+    this.hasCashFlowData = false;
+    this.hasOutstandingInvoicesData = false;
+    this.hasLiabilityAssetsData = false;
+    this.hasAssetDistributionData = false;
+    this.revenueTrendChartData = { labels: [], datasets: [] };
+    this.cashFlowChartData = { labels: [], datasets: [] };
+    this.liabilityAssetsChartData = { labels: [], datasets: [] };
+    this.assetDistributionChartData = { labels: [], datasets: [] };
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
