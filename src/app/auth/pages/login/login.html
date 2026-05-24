@@ -17,16 +17,24 @@
         />
       </div>
 
-      <div class="form-group">
-        <label>Password</label>
-        <input
-          type="password"
-          name="password"
-          [(ngModel)]="password"
-          placeholder="Your password"
-          autocomplete="current-password"
-        />
-      </div>
+      @if (!forgotPasswordMode()) {
+        <div class="form-group">
+          <label>Password</label>
+          <input
+            type="password"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Your password"
+            autocomplete="current-password"
+          />
+        </div>
+      }
+
+      @if (successMessage()) {
+        <div class="success-message">
+          {{ successMessage() }}
+        </div>
+      }
 
       @if (errorMessage()) {
         <div class="error-message">
@@ -34,13 +42,36 @@
         </div>
       }
 
-      <button type="submit" [disabled]="loading()">
-        @if (loading()) {
-          Signing in...
-        } @else {
-          Sign in
-        }
-      </button>
+      @if (!forgotPasswordMode()) {
+        <button type="submit" [disabled]="loading()">
+          @if (loading()) {
+            Signing in...
+          } @else {
+            Sign in
+          }
+        </button>
+
+        <button type="button" class="forgot-link" (click)="toggleForgotPassword()">
+          Forgot password?
+        </button>
+      } @else {
+        <button
+          type="button"
+          [disabled]="forgotPasswordLoading()"
+          (click)="sendForgotPasswordEmail()"
+        >
+          @if (forgotPasswordLoading()) {
+            Sending email...
+          } @else {
+            Send reset email
+          }
+        </button>
+
+        <button type="button" class="forgot-link" (click)="toggleForgotPassword()">
+          Back to login
+        </button>
+      }
+
       <p class="register-link">
         Don't have an account yet?
         <a routerLink="/register">Send a request</a>

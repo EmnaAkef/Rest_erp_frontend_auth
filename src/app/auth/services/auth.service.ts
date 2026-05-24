@@ -26,6 +26,10 @@ export interface AuthResponse {
   profileImageUrl?: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -203,5 +207,11 @@ export class AuthService {
     }
 
     return false;
+  }
+
+  forgotPassword(request: ForgotPasswordRequest): Observable<string> {
+    return this.http.post(`${this.apiUrl}/forgot-password`, request, {
+      responseType: 'text',
+    });
   }
 }
