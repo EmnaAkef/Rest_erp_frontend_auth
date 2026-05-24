@@ -5,24 +5,27 @@
     </div>
 
     @if (isSuperAdmin()) {
-  <div class="company-selector">
-    <label>Company dashboard</label>
+      <div class="company-selector">
+        <label>Company dashboard</label>
 
-    <select [value]="selectedCompanyKey !== null ? selectedCompanyKey.toString() : ''" (change)="onCompanyChange($event)">
-      <option value="">Select company</option>
+        <select
+          [value]="selectedCompanyKey !== null ? selectedCompanyKey.toString() : ''"
+          (change)="onCompanyChange($event)"
+        >
+          <option value="">Select company</option>
 
-      @for (company of companies(); track company.companyKey) {
-        <option [value]="company.companyKey">
-          {{ company.companyName }}
-        </option>
-      }
-    </select>
+          @for (company of companies(); track company.companyKey) {
+            <option [value]="company.companyKey">
+              {{ company.companyName }}
+            </option>
+          }
+        </select>
 
-    @if (selectedCompanyKey === null) {
-      <small>Choose a company to view its dashboards.</small>
+        @if (selectedCompanyKey === null) {
+          <small>Choose a company to view its dashboards.</small>
+        }
+      </div>
     }
-  </div>
-}
 
     <ul class="menu">
       <li routerLink="/overview" routerLinkActive="active">
@@ -50,34 +53,38 @@
   </div>
 
   @if (user(); as currentUser) {
-  <div class="sidebar-profile-wrapper">
-    <button class="profile-main" (click)="toggleProfileMenu()">
-      <div class="avatar">
-        @if (currentUser.profileImageUrl) {
-        <img [src]="'http://localhost:8080' + currentUser.profileImageUrl" alt="Profile" />
-        } @else {
-        {{ getInitial() }}
-        }
-      </div>
+    <div class="sidebar-profile-wrapper">
+      <button class="profile-main" (click)="toggleProfileMenu()">
+        <div class="avatar">
+          @if (currentUser.profileImageUrl) {
+            <img [src]="'http://localhost:8080' + currentUser.profileImageUrl" alt="Profile" />
+          } @else {
+            {{ getInitial() }}
+          }
+        </div>
 
-      <div class="profile-info">
-        <span class="name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
-        <span class="company">{{ currentUser.companyName }}</span>
-      </div>
+        <div class="profile-info">
+          <span class="name">{{ currentUser.firstName }} {{ currentUser.lastName }}</span>
+          <span class="role-label">{{ getUserRoleLabel() }}</span>
 
-      <span class="material-symbols-outlined profile-arrow">
-        {{ isProfileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
-      </span>
-    </button>
+          @if (getUserCompanyLabel()) {
+            <span class="company-label">{{ getUserCompanyLabel() }}</span>
+          }
+        </div>
 
-    @if (isProfileMenuOpen) {
-      <div class="profile-menu">
-        <button class="profile-menu-item" type="button" (click)="logout()">
-          <span class="material-symbols-outlined">logout</span>
-          <span>Logout</span>
-        </button>
-      </div>
-    }
-  </div>
+        <span class="material-symbols-outlined profile-arrow">
+          {{ isProfileMenuOpen ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}
+        </span>
+      </button>
+
+      @if (isProfileMenuOpen) {
+        <div class="profile-menu">
+          <button class="profile-menu-item" type="button" (click)="logout()">
+            <span class="material-symbols-outlined">logout</span>
+            <span>Logout</span>
+          </button>
+        </div>
+      }
+    </div>
   }
 </div>

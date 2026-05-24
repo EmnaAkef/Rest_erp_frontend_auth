@@ -91,6 +91,38 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return currentUser.firstName.charAt(0).toUpperCase();
   }
 
+  getUserRoleLabel(): string {
+    const currentUser = this.user();
+
+    if (!currentUser) {
+      return '';
+    }
+
+    if (currentUser.role === 'SUPER_ADMIN') {
+      return 'Super Admin';
+    }
+
+    if (currentUser.role === 'COMPANY_ADMIN') {
+      return 'Company Admin';
+    }
+
+    return 'User';
+  }
+
+  getUserCompanyLabel(): string {
+    const currentUser = this.user();
+
+    if (!currentUser) {
+      return '';
+    }
+
+    if (currentUser.role === 'SUPER_ADMIN') {
+      return '';
+    }
+
+    return currentUser.companyName;
+  }
+
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
