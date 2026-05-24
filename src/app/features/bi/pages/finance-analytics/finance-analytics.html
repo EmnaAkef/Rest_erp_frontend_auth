@@ -489,21 +489,29 @@
       <div class="compliance-card modern-compliance-card">
         <div class="modern-compliance-header">
           <div class="modern-compliance-title">
-            <span class="material-symbols-outlined compliance-icon">verified_user</span>
-            <strong>Compliance Status: {{ complianceStatus }}</strong>
+  <span class="material-symbols-outlined compliance-icon">
+    {{ complianceStatusIcon }}
+  </span>
+
+            <strong [class.status-danger]="complianceStatus === 'Attention Required'">
+              Compliance Status: {{ complianceStatus }}
+            </strong>
           </div>
         </div>
 
         <div class="modern-compliance-content">
           <div class="modern-compliance-block">
-            <h4>Next Filing Dates</h4>
+            <h4>Compliance Risks</h4>
 
-            @for (item of nextFilingDates; track item.label) {
-              <div class="modern-compliance-row">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.date }}</strong>
-              </div>
-            }
+            <div class="modern-compliance-row">
+              <span>Overdue Invoices</span>
+              <strong>{{ overdueInvoicesCount }}</strong>
+            </div>
+
+            <div class="modern-compliance-row">
+              <span>Tax Payments Count</span>
+              <strong>{{ taxPayments.length }}</strong>
+            </div>
           </div>
 
           <div class="modern-compliance-block">

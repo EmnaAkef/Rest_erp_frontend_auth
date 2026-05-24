@@ -188,9 +188,8 @@
 }
 
 .top-kpi-grid {
-
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -712,7 +711,7 @@ tbody td {
 @media (max-width: 1450px) {
   .top-kpi-grid {
 
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .financial-grid,

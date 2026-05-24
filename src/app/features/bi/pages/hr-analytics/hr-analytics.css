@@ -486,7 +486,7 @@ table th:first-child {
 }
 
 .kpi-grid-5 {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .payroll-recruitment-wrapper {
@@ -661,7 +661,7 @@ tbody td {
 
 @media (max-width: 1400px) {
   .kpi-grid-5 {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .two-cols,

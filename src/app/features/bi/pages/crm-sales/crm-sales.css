@@ -345,7 +345,7 @@
   right: 0;
   width: 620px;
 
-  background: #d7bfe9;
+  background: linear-gradient(180deg, #fbfaff 0%, #f7f5ff 100%);
   border: 1px solid #d8d3ff;
   border-radius: 24px;
   box-shadow: 0 26px 70px rgba(91, 97, 246, 0.22);
@@ -503,7 +503,7 @@
 
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
@@ -741,7 +741,7 @@ tbody tr:last-child td {
 
 @media (max-width: 1400px) {
   .kpi-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .two-cols,
@@ -762,7 +762,7 @@ tbody tr:last-child td {
   }
 
   .kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .customer-revenue-card {

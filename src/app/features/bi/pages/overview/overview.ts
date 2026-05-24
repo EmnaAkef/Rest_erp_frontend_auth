@@ -73,7 +73,6 @@ export class OverviewComponent implements OnInit, OnDestroy {
   lateCheckinsDisplay = '0';
   retentionRateDisplay = '0%';
 
-
   cashBalanceBars = [
     { label: 'Inflow', value: '$0', width: 0, color: 'green' },
     { label: 'Outflow', value: '$0', width: 0, color: 'red' },
@@ -86,8 +85,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
   retentionNote = 'Customer retention based on active customers.';
   constructor(
     private overviewKpiService: OverviewKpiService,
-    private authService: AuthService
-  ) { }
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.authService.refreshCurrentUser();
@@ -562,16 +561,18 @@ export class OverviewComponent implements OnInit, OnDestroy {
     });
   }
   private applySalesPipelineFunnel(data: OverviewPipelineFunnelItem[]): void {
+    console.log('Pipeline funnel data:', data);
+
     const sortedData = [...data].sort(
-      (a, b) => Number(b.dealCount ?? 0) - Number(a.dealCount ?? 0),
+      (a, b) => Number(b.pipelineValue ?? 0) - Number(a.pipelineValue ?? 0),
     );
 
     this.pipelineFunnelData = {
       labels: sortedData.map((item) => item.stage),
       datasets: [
         {
-          data: sortedData.map((item) => Number(item.dealCount ?? 0)),
-          label: 'Pipeline Deals',
+          data: sortedData.map((item) => Number(item.pipelineValue ?? 0)),
+          label: 'Pipeline Value',
           backgroundColor: '#f59e0b',
           borderRadius: 4,
           barThickness: 28,

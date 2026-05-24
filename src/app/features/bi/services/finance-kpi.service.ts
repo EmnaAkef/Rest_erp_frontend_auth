@@ -190,5 +190,19 @@ export class FinanceKpiService {
   getFinanceFilterOptions(): Observable<FinanceFilterOptionsResponse> {
     return this.http.get<FinanceFilterOptionsResponse>(`${this.apiUrl}/filter-options`);
   }
+
+  getRecentTaxPayments(startDate: string, endDate: string) {
+    return this.http.get<any[]>(`${this.apiUrl}/recent-tax-payments`, {
+      params: {
+        startDate,
+        endDate,
+      },
+    });
+  }
+
+  getNextFilingDates() {
+    return this.http.get<any[]>(`${this.apiUrl}/next-filing-dates`);
+  }
+  
 }
 

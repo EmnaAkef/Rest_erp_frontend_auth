@@ -77,14 +77,12 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     color: string;
   }[] = [];
 
-  depreciationExpenseDisplay = '0';
-  complianceStatus = 'Full Compliance';
-  complianceStatusIcon = '◔';
+  nextFilingDates: any[] = [];
+  taxPayments: any[] = [];
 
-  nextFilingDates: {
-    label: string;
-    date: string;
-  }[] = [];
+  depreciationExpenseDisplay = '0';
+  complianceStatus = 'Checking Compliance';
+  complianceStatusIcon = 'verified_user';
 
   constructor(private financeKpiService: FinanceKpiService) {}
 
@@ -378,7 +376,8 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     this.loadTopOutstandingInvoices();
     this.loadLiabilityVsAssets();
     this.loadAssetDistribution();
-    this.loadComplianceSummary();
+    //this.loadComplianceSummary();
+    this.loadComplianceDetails();
   }
 
   private cleanFinanceFilters(
@@ -429,12 +428,6 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     amount: string;
     dueDate: string;
     status: string;
-  }[] = [];
-
-  taxPayments: {
-    code: string;
-    label: string;
-    amount: string;
   }[] = [];
 
   // ── Chart options ──────────────────────────────────────────────────────────
@@ -794,6 +787,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
         }));
 
         this.hasOutstandingInvoicesData = this.outstandingInvoices.length > 0;
+        this.updateComplianceStatus();
       },
       error: (error) => {
         console.error('Erreur chargement Outstanding Invoices:', error);
@@ -1133,5 +1127,61 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
         console.error('Erreur chargement Compliance Summary:', error);
       },
     });
+  }
+
+  private loadComplianceDetails(): void {
+    this.financeKpiService.getNextFilingDates().subscribe({
+      next: (data) => {
+        this.nextFilingDates = data;
+        this.updateComplianceStatus();
+      },
+      error: (error) => {
+        console.error('Erreur filing dates:', error);
+        this.updateComplianceStatus();
+      },
+    });
+
+    this.financeKpiService.getRecentTaxPayments(this.startDate, this.endDate).subscribe({
+      next: (data) => {
+        this.taxPayments = data.map((item) => ({
+          code: item.code,
+          label: item.label,
+          amount: this.formatCurrency(item.amount),
+        }));
+
+        this.updateComplianceStatus();
+      },
+      error: (error) => {
+        console.error('Erreur tax payments:', error);
+        this.updateComplianceStatus();
+      },
+    });
+  }
+  private updateComplianceStatus(): void {
+    const hasOverdueInvoices = this.outstandingInvoices.some(
+      (item) => item.status?.toLowerCase() === 'overdue',
+    );
+
+    const hasNoTaxPayments = this.taxPayments.length === 0;
+    const hasNoFilingDates = this.nextFilingDates.length === 0;
+
+    if (hasOverdueInvoices) {
+      this.complianceStatus = 'Attention Required';
+      this.complianceStatusIcon = 'warning';
+      return;
+    }
+
+    if (hasNoTaxPayments || hasNoFilingDates) {
+      this.complianceStatus = 'Incomplete Data';
+      this.complianceStatusIcon = 'info';
+      return;
+    }
+
+    this.complianceStatus = 'Full Compliance';
+    this.complianceStatusIcon = 'verified_user';
+  }
+  get overdueInvoicesCount(): number {
+    return this.outstandingInvoices.filter((item) => item.status?.toLowerCase() === 'overdue')
+      .length;
   }
 }
