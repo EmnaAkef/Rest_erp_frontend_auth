@@ -1,4 +1,4 @@
-import { Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
@@ -18,9 +18,10 @@ import {
 import { FinanceFilterOptionsResponse } from '../../services/finance-kpi.service';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
 import { BiFormatService } from '../../services/bi-format.service';
-import { Observable, Subscription } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { finalize, takeUntil } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { isPlatformBrowser } from '@angular/common';
 import { AuthService } from '../../../../auth/services/auth.service';
 Chart.register(...registerables);
 
@@ -57,12 +58,14 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   kpiErrorMessage = '';
   isDashboardLoading = false;
   private dashboardLoadingRequests = 0;
-  private companyChangeSubscription?: Subscription;
   selectedPeriod: 'last30days' | 'last6months' | 'yearToDate' = 'last6months';
 
   startDate = '';
   endDate = '';
   private biFormat = inject(BiFormatService);
+  private authService = inject(AuthService);
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly destroy$ = new Subject<void>();
   currency = '';
 
   totalLiabilitiesDisplay = '0';
@@ -83,20 +86,20 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     date: string;
   }[] = [];
 
-  constructor(
-    private financeKpiService: FinanceKpiService,
-    private authService: AuthService,
-  ) {}
+  constructor(private financeKpiService: FinanceKpiService) {}
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     this.authService.refreshCurrentUser();
     this.authService.syncSelectedCompanyKeyFromStorage();
-    this.updatePeriodDates('last6months');
 
-    this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
+    this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       if (this.canDisplayDashboard()) {
         this.loadFinanceFilterOptions();
-        this.reloadAll();
+        this.setPeriod(this.selectedPeriod);
       } else {
         this.clearFinanceData();
       }
@@ -104,7 +107,8 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.companyChangeSubscription?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
   // ── Finance filters ─────────────────────────────────────────────────────────
   isFinanceFilterOpen = false;
@@ -536,16 +540,6 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   // ── Period selection ───────────────────────────────────────────────────────
 
   setPeriod(period: 'last30days' | 'last6months' | 'yearToDate'): void {
-    this.updatePeriodDates(period);
-
-    if (this.canDisplayDashboard()) {
-      this.reloadAll();
-    } else {
-      this.clearFinanceData();
-    }
-  }
-
-  private updatePeriodDates(period: 'last30days' | 'last6months' | 'yearToDate'): void {
     this.selectedPeriod = period;
 
     const today = new Date();
@@ -564,39 +558,12 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
 
     this.startDate = this.formatDate(start);
     this.endDate = this.formatDate(today);
-  }
 
-  canDisplayDashboard(): boolean {
-    return this.authService.canLoadCompanyDashboard();
-  }
-
-  private clearFinanceData(): void {
-    this.dashboardLoadingRequests = 0;
-    this.isDashboardLoading = false;
-    this.loadingKpis = false;
-    this.kpiErrorMessage = 'Please select a company from the sidebar to view its dashboard.';
-
-    this.overviewKpis = [];
-    this.cashKpis = [];
-    this.receivableKpis = [];
-    this.taxKpis = [];
-    this.outstandingInvoices = [];
-    this.taxPayments = [];
-    this.assetDistributionLegend = [];
-    this.nextFilingDates = [];
-    this.currency = '';
-    this.totalLiabilitiesDisplay = '0';
-    this.assetValueDisplay = '0';
-    this.depreciationExpenseDisplay = '0';
-    this.hasRevenueProfitTrendData = false;
-    this.hasCashFlowData = false;
-    this.hasOutstandingInvoicesData = false;
-    this.hasLiabilityAssetsData = false;
-    this.hasAssetDistributionData = false;
-    this.revenueTrendChartData = { labels: [], datasets: [] };
-    this.cashFlowChartData = { labels: [], datasets: [] };
-    this.liabilityAssetsChartData = { labels: [], datasets: [] };
-    this.assetDistributionChartData = { labels: [], datasets: [] };
+    if (this.canDisplayDashboard()) {
+      this.reloadAll();
+    } else {
+      this.clearFinanceData();
+    }
   }
 
   // ── Data loading ───────────────────────────────────────────────────────────
@@ -940,6 +907,39 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
         }
       }),
     );
+  }
+
+  canDisplayDashboard(): boolean {
+    return this.authService.canLoadCompanyDashboard();
+  }
+
+  private clearFinanceData(): void {
+    this.dashboardLoadingRequests = 0;
+    this.loadingKpis = false;
+    this.isDashboardLoading = false;
+    this.kpiErrorMessage = '';
+    this.currency = '';
+    this.overviewKpis = [];
+    this.cashKpis = [];
+    this.receivableKpis = [];
+    this.taxKpis = [];
+    this.outstandingInvoices = [];
+    this.taxPayments = [];
+    this.assetDistributionLegend = [];
+    this.nextFilingDates = [];
+    this.totalLiabilitiesDisplay = '0';
+    this.assetValueDisplay = '0';
+    this.depreciationExpenseDisplay = '0';
+    this.complianceStatus = 'Full Compliance';
+    this.hasRevenueProfitTrendData = false;
+    this.hasCashFlowData = false;
+    this.hasOutstandingInvoicesData = false;
+    this.hasLiabilityAssetsData = false;
+    this.hasAssetDistributionData = false;
+    this.revenueTrendChartData = { labels: [], datasets: [] };
+    this.cashFlowChartData = { labels: [], datasets: [] };
+    this.liabilityAssetsChartData = { labels: [], datasets: [] };
+    this.assetDistributionChartData = { labels: [], datasets: [] };
   }
 
   // ── Export ─────────────────────────────────────────────────────────────────

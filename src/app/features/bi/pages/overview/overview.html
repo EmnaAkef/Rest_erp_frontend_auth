@@ -1,10 +1,4 @@
 <div class="dashboard-page" #dashboardContent>
-  @if (!canDisplayDashboard()) {
-    <div class="company-required-state">
-      <span class="material-symbols-outlined">business</span>
-      <p>Which company’s dashboard do you want to visit? Please select a company from the sidebar.</p>
-    </div>
-  } @else {
   @if (isDashboardLoading) {
     <div class="dashboard-loading-overlay" data-html2canvas-ignore="true">
       <div class="dashboard-loader-card">
@@ -48,8 +42,6 @@
       </div>
 
       <div class="header-divider"></div>
-
-    
 
       <div class="export-wrapper">
         <button class="header-export-btn" (click)="toggleExportMenu()">
@@ -472,5 +464,4 @@
       </button>
     </div>
   </div>
-  }
 </div>

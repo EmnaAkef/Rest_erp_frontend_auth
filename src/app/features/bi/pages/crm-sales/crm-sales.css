@@ -307,19 +307,15 @@
   position: relative;
   overflow: hidden;
 }
-
-::ng-deep .kpi-grid app-kpi-card .kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 5px;
-  width: 100%;
-  background: linear-gradient(90deg, #5b61f6, #8b5cf6, #c4b5fd);
+.high-value-card .card-subtitle {
+  margin: 6px 0 22px;
+  font-size: 14px;
+  color: #8b95a7;
+  line-height: 1.4;
 }
 
 /* ─────────────────────────────────────────────
-   Sales Filters Panel
+   Sales Filters Panel - improved style
 ───────────────────────────────────────────── */
 
 .filter-wrapper {
@@ -327,110 +323,120 @@
 }
 
 .header-action-btn.active-filter {
-  border-color: #5b61f6;
-  color: #5b61f6;
-  background: #f7f7ff;
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4f46e5;
+  font-weight: 700;
 }
 
 .filter-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: #5b61f6;
-  display: inline-block;
-  margin-left: 2px;
+  background: #f59e0b;
+  border-radius: 999px;
+  position: absolute;
+  top: 9px;
+  right: 10px;
 }
 
 .sales-filter-panel {
   position: absolute;
   top: 58px;
   right: 0;
-  width: 520px;
+  width: 620px;
+
   background: #d7bfe9;
-  border: 1px solid #e7ebf3;
-  border-radius: 22px;
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
-  padding: 22px;
-  z-index: 80;
+  border: 1px solid #d8d3ff;
+  border-radius: 24px;
+  box-shadow: 0 26px 70px rgba(91, 97, 246, 0.22);
+
+  padding: 24px;
+  z-index: 100;
 }
 
 .filter-panel-header {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 22px;
+  align-items: flex-start;
+  margin-bottom: 20px;
 }
 
 .filter-panel-header h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 900;
   color: #111827;
 }
 
 .filter-panel-header p {
   margin: 6px 0 0;
-  font-size: 13px;
-  color: #7b8494;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
 }
 
 .filter-close-btn {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border: none;
-  border-radius: 12px;
-  background: #f5f7fb;
-  color: #64748b;
+  border-radius: 14px;
+  background: #f1f4fb;
+  color: #475569;
   cursor: pointer;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .filter-close-btn:hover {
-  background: #eef2ff;
+  background: #ffffff;
   color: #5b61f6;
 }
 
 .filter-close-btn .material-symbols-outlined {
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
 }
 
 .filter-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .filter-field label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 800;
   color: #475569;
 }
 
 .filter-field select {
   width: 100%;
-  height: 44px;
-  border: 1px solid #e7ebf3;
-  border-radius: 14px;
+  height: 46px;
+  border: 1px solid #dfe3ee;
+  border-radius: 15px;
+  padding: 0 16px;
   background: #ffffff;
-  color: #1f2937;
-  padding: 0 12px;
+  color: #111827;
   font-size: 14px;
   outline: none;
   cursor: pointer;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
 }
 
 .filter-field select:focus {
-  border-color: #5b61f6;
-  box-shadow: 0 0 0 3px rgba(91, 97, 246, 0.12);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
 }
 
 .filter-actions {
@@ -438,42 +444,49 @@
   justify-content: flex-end;
   gap: 12px;
   margin-top: 24px;
-  padding-top: 18px;
-  border-top: 1px solid #edf1f7;
 }
 
 .filter-reset-btn,
 .filter-apply-btn {
-  height: 42px;
+  height: 44px;
   padding: 0 18px;
   border-radius: 14px;
-  font-size: 14px;
-  font-weight: 600;
   cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .filter-reset-btn {
+  border: 1px solid #e5e7eb;
   background: #ffffff;
-  border: 1px solid #e7ebf3;
-  color: #64748b;
-}
-
-.filter-reset-btn:hover {
-  background: #f5f7fb;
-  color: #1f2937;
+  color: #475569;
 }
 
 .filter-apply-btn {
   border: none;
   background: #5b61f6;
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(91, 97, 246, 0.22);
+  box-shadow: 0 12px 24px rgba(91, 97, 246, 0.22);
+}
+
+.filter-reset-btn:hover {
+  background: #f8fafc;
 }
 
 .filter-apply-btn:hover {
-  background: #4f55e8;
+  background: #4f46e5;
 }
 
+@media (max-width: 900px) {
+  .sales-filter-panel {
+    width: calc(100vw - 32px);
+    right: -120px;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .btn-icon {
   font-size: 18px;
   line-height: 1;

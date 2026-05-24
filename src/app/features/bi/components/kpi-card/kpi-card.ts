@@ -13,4 +13,7 @@ export class KpiCardComponent {
   @Input() trend = '';
   @Input() icon = 'payments';
   @Input() trendType: 'positive' | 'negative' | 'neutral' = 'positive';
+
+  @Input() subtitle = '';
+  @Input() variant: 'default' | 'sales' = 'default';
 }

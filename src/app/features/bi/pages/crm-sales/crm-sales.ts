@@ -1,7 +1,7 @@
 
 import {
   Component, ElementRef, OnInit, OnDestroy,
-  ViewChild, inject, signal, computed,PLATFORM_ID 
+  ViewChild, inject, signal, computed, PLATFORM_ID
 } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData , ChartOptions, TooltipItem } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
-import { CommonModule, isPlatformBrowser  } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
@@ -151,6 +151,8 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
       y: { grid: { display: false } },
     },
   };
+
+  readonly pipelineChartOptions: ChartConfiguration['options'] = this.simpleBarOptions;
 
   readonly lineOptions: ChartConfiguration['options'] = {
     responsive: true,

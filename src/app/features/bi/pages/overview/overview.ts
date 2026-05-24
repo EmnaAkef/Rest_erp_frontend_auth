@@ -4,7 +4,7 @@ import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
-
+import { ChartOptions } from 'chart.js';
 import { PageFilters } from '../../../../layout/page-filters/page-filters';
 import { SectionTitleComponent } from '../../components/section-title/section-title';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
@@ -73,6 +73,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   lateCheckinsDisplay = '0';
   retentionRateDisplay = '0%';
 
+
   cashBalanceBars = [
     { label: 'Inflow', value: '$0', width: 0, color: 'green' },
     { label: 'Outflow', value: '$0', width: 0, color: 'red' },
@@ -84,28 +85,28 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   retentionNote = 'Customer retention based on active customers.';
   constructor(
-  private overviewKpiService: OverviewKpiService,
-  private authService: AuthService
-) {}
+    private overviewKpiService: OverviewKpiService,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
-  this.authService.refreshCurrentUser();
-  this.authService.syncSelectedCompanyKeyFromStorage();
+    this.authService.refreshCurrentUser();
+    this.authService.syncSelectedCompanyKeyFromStorage();
 
-  this.updatePeriodDates('last6months');
+    this.updatePeriodDates('last6months');
 
-  this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
-    if (this.authService.canLoadCompanyDashboard()) {
-      this.loadAllOverviewData();
-    } else {
-      this.clearOverviewData();
-    }
-  });
-}
+    this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
+      if (this.authService.canLoadCompanyDashboard()) {
+        this.loadAllOverviewData();
+      } else {
+        this.clearOverviewData();
+      }
+    });
+  }
 
-ngOnDestroy(): void {
-  this.companyChangeSubscription?.unsubscribe();
-}
+  ngOnDestroy(): void {
+    this.companyChangeSubscription?.unsubscribe();
+  }
 
   topKpis: OverviewKpiCard[] = [];
 
@@ -145,7 +146,32 @@ ngOnDestroy(): void {
     presence: string;
     customers: string;
   }[] = [];
-
+  pipelineFunnelOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          display: false,
+        },
+      },
+      y: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+  };
   commonLineOptions: ChartConfiguration['options'] = {
     responsive: true,
     maintainAspectRatio: false,
@@ -535,15 +561,20 @@ ngOnDestroy(): void {
       },
     });
   }
-
   private applySalesPipelineFunnel(data: OverviewPipelineFunnelItem[]): void {
+    const sortedData = [...data].sort(
+      (a, b) => Number(b.dealCount ?? 0) - Number(a.dealCount ?? 0),
+    );
+
     this.pipelineFunnelData = {
-      labels: data.map((item) => item.stage),
+      labels: sortedData.map((item) => item.stage),
       datasets: [
         {
-          data: data.map((item) => Number(item.dealCount ?? 0)),
+          data: sortedData.map((item) => Number(item.dealCount ?? 0)),
           label: 'Pipeline Deals',
           backgroundColor: '#f59e0b',
+          borderRadius: 4,
+          barThickness: 28,
         },
       ],
     };
@@ -769,80 +800,80 @@ ngOnDestroy(): void {
   }
 
   private updatePeriodDates(period: 'last30days' | 'last6months' | 'yearToDate'): void {
-  this.selectedPeriod = period;
+    this.selectedPeriod = period;
 
-  const today = new Date();
-  const start = new Date(today);
+    const today = new Date();
+    const start = new Date(today);
 
-  if (period === 'last30days') {
-    start.setDate(today.getDate() - 30);
+    if (period === 'last30days') {
+      start.setDate(today.getDate() - 30);
+    }
+
+    if (period === 'last6months') {
+      start.setMonth(today.getMonth() - 6);
+    }
+
+    if (period === 'yearToDate') {
+      start.setMonth(0);
+      start.setDate(1);
+    }
+
+    this.startDate = this.formatDate(start);
+    this.endDate = this.formatDate(today);
   }
 
-  if (period === 'last6months') {
-    start.setMonth(today.getMonth() - 6);
+  private loadAllOverviewData(): void {
+    if (!this.canDisplayDashboard()) {
+      this.clearOverviewData();
+      return;
+    }
+
+    this.loadOverviewKpis();
+    this.loadFinancialTrend();
+    this.loadCashSummary();
+    this.loadSalesPipelineFunnel();
+    this.loadDealStatus();
+    this.loadTopSalesPerformers();
+    this.loadAttendanceTrend();
+    this.loadDepartmentDistribution();
+    this.loadCustomerRetention();
+    this.loadTopCustomersByRevenue();
+    this.loadOperationalAlerts();
+    this.loadExecutiveLedger();
   }
 
-  if (period === 'yearToDate') {
-    start.setMonth(0);
-    start.setDate(1);
+  private clearOverviewData(): void {
+    this.dashboardLoadingRequests = 0;
+    this.isDashboardLoading = false;
+    this.loadingKpis = false;
+
+    this.topKpis = [];
+    this.topSalesPerformers = [];
+    this.departmentDistribution = [];
+    this.customerRevenue = [];
+    this.alertCards = [];
+    this.executiveLedger = [];
+
+    this.financialChartData = { labels: [], datasets: [] };
+    this.financialLineData = { labels: [], datasets: [] };
+    this.pipelineFunnelData = { labels: [], datasets: [] };
+    this.dealStatusData = { labels: [], datasets: [] };
+    this.attendanceTrendData = { labels: [], datasets: [] };
+    this.attendanceTrendMiniData = { labels: [], datasets: [] };
+    this.retentionData = {
+      labels: ['Retention', 'Inactive'],
+      datasets: [
+        {
+          data: [0, 100],
+          backgroundColor: ['#e58e2b', '#f8e0c3'],
+          hoverBackgroundColor: ['#e58e2b', '#f8e0c3'],
+          borderWidth: 0,
+        },
+      ],
+    };
+
+    this.kpiErrorMessage = 'Please select a company from the sidebar to view its dashboard.';
   }
-
-  this.startDate = this.formatDate(start);
-  this.endDate = this.formatDate(today);
-}
-
-private loadAllOverviewData(): void {
-  if (!this.canDisplayDashboard()) {
-    this.clearOverviewData();
-    return;
-  }
-
-  this.loadOverviewKpis();
-  this.loadFinancialTrend();
-  this.loadCashSummary();
-  this.loadSalesPipelineFunnel();
-  this.loadDealStatus();
-  this.loadTopSalesPerformers();
-  this.loadAttendanceTrend();
-  this.loadDepartmentDistribution();
-  this.loadCustomerRetention();
-  this.loadTopCustomersByRevenue();
-  this.loadOperationalAlerts();
-  this.loadExecutiveLedger();
-}
-
-private clearOverviewData(): void {
-  this.dashboardLoadingRequests = 0;
-  this.isDashboardLoading = false;
-  this.loadingKpis = false;
-
-  this.topKpis = [];
-  this.topSalesPerformers = [];
-  this.departmentDistribution = [];
-  this.customerRevenue = [];
-  this.alertCards = [];
-  this.executiveLedger = [];
-
-  this.financialChartData = { labels: [], datasets: [] };
-  this.financialLineData = { labels: [], datasets: [] };
-  this.pipelineFunnelData = { labels: [], datasets: [] };
-  this.dealStatusData = { labels: [], datasets: [] };
-  this.attendanceTrendData = { labels: [], datasets: [] };
-  this.attendanceTrendMiniData = { labels: [], datasets: [] };
-  this.retentionData = {
-    labels: ['Retention', 'Inactive'],
-    datasets: [
-      {
-        data: [0, 100],
-        backgroundColor: ['#e58e2b', '#f8e0c3'],
-        hoverBackgroundColor: ['#e58e2b', '#f8e0c3'],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  this.kpiErrorMessage = 'Please select a company from the sidebar to view its dashboard.';
-}
 
   private applyTopCustomersByRevenue(data: OverviewTopCustomerItem[]): void {
     this.customerRevenue = data.map((item) => ({
@@ -1082,14 +1113,14 @@ private clearOverviewData(): void {
   }
 
   setPeriod(period: 'last30days' | 'last6months' | 'yearToDate'): void {
-  this.updatePeriodDates(period);
+    this.updatePeriodDates(period);
 
-  if (this.authService.canLoadCompanyDashboard()) {
-    this.loadAllOverviewData();
-  } else {
-    this.clearOverviewData();
+    if (this.authService.canLoadCompanyDashboard()) {
+      this.loadAllOverviewData();
+    } else {
+      this.clearOverviewData();
+    }
   }
-}
 
   canDisplayDashboard(): boolean {
     return this.authService.canLoadCompanyDashboard();
@@ -1295,5 +1326,31 @@ private clearOverviewData(): void {
     }
 
     return '$0';
+  }
+  exportExecutiveLedgerAsCSV(): void {
+    const rows = this.executiveLedger.map((item) => ({
+      Period: item.period,
+      Revenue: item.revenue,
+      Expenses: item.expenses,
+      'Net Profit': item.profit,
+      'Deals Won': item.deals,
+      Pipeline: item.pipeline,
+      Employees: item.employees,
+      Presence: item.presence,
+      Customers: item.customers,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'executive-summary-ledger.csv');
+    link.click();
+
+    URL.revokeObjectURL(url);
   }
 }

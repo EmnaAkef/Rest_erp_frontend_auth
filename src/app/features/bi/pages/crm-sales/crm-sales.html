@@ -129,7 +129,7 @@
 
           <div class="filter-actions">
             <button class="filter-reset-btn" (click)="clearSalesFilters()">
-              Clear
+              Reset
             </button>
 
             <button class="filter-apply-btn" (click)="applySalesFilters()">
@@ -165,7 +165,10 @@
     }
   </div>
 
-  <app-section-title title="Sales Performance"></app-section-title>
+  <app-section-title
+    title="Sales Performance"
+    subtitle="Revenue trends against established enterprise targets">
+  </app-section-title>
 
   <div class="two-cols">
     <div class="chart-card">
@@ -203,12 +206,19 @@
     </div>
   </div>
 
-  <app-section-title title="Sales Pipeline"></app-section-title>
+  <app-section-title
+    title="Sales Pipeline"
+    subtitle="Opportunity distribution and stage velocity metrics">
+  </app-section-title>
 
   <div class="two-cols">
     <div class="chart-card">
       @if (hasPipelineData) {
-      <canvas baseChart [data]="pipelineChartData" [type]="pipelineChartType">
+      <canvas
+        baseChart
+        [data]="pipelineChartData"
+        [type]="pipelineChartType"
+        [options]="pipelineChartOptions">
       </canvas>
       } @else {
       <div class="no-data">
@@ -219,7 +229,8 @@
     </div>
 
     <div class="card">
-  <h3>High-Value Deals</h3>
+      <h3>High-Value Active Deals</h3>
+      <p class="card-subtitle">Critical opportunities currently in negotiation</p>
 
   @if (hasHighValueDealsData) {
     <div class="list">
@@ -239,7 +250,10 @@
 </div>
   </div>
 
-  <app-section-title title="Orders & Invoices"></app-section-title>
+  <app-section-title
+    title="Orders & Invoices"
+    subtitle="Transaction lifecycle and financial aging analysis">
+  </app-section-title>
 
   @if (hasSalesOrdersData) {
   <table>
@@ -276,7 +290,10 @@
   </div>
 }
 
-  <app-section-title title="Revenue by Product"></app-section-title>
+  <app-section-title
+    title="Revenue by Product"
+    subtitle="Product-level contribution to total sales revenue">
+  </app-section-title>
 
   <div class="chart-card">
     @if (hasRevenueByProductData) {
@@ -294,7 +311,10 @@
 }
   </div>
 
-  <app-section-title title="Customer Analytics"></app-section-title>
+  <app-section-title
+    title="Customer Analytics"
+    subtitle="Retention rate and customer value evolution">
+  </app-section-title>
 
   <div class="customer-revenue-card">
 
