@@ -1069,7 +1069,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('overview-dashboard.pdf');
+    pdf.save('Hr-Analytics-dashboard.pdf');
   }
 
   exportAsExcel(): void {
