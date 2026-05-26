@@ -1,11 +1,11 @@
 <div class="dashboard-page" #dashboardContent>
-  @if (!canDisplayDashboard()) {
+  @if (!canDisplayDashboardValue) {
     <div class="company-required-state">
       <span class="material-symbols-outlined">business</span>
       <p>Which company’s dashboard do you want to visit? Please select a company from the sidebar.</p>
     </div>
   } @else {
-  @if (isDashboardLoading) {
+    @if (!canDisplayDashboardValue) {
     <div class="dashboard-loading-overlay" data-html2canvas-ignore="true">
       <div class="dashboard-loader-card">
         <div class="loader-spinner"></div>

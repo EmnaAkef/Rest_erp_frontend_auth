@@ -54,7 +54,9 @@ export class OverviewComponent implements OnInit, OnDestroy {
   isExportMenuOpen = false;
   loadingKpis = false;
   kpiErrorMessage = '';
-
+  //loading correction
+  canDisplayDashboardValue = false;
+  //fin
   isDashboardLoading = false;
   private dashboardLoadingRequests = 0;
   private companyChangeSubscription?: Subscription;
@@ -94,12 +96,26 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
     this.updatePeriodDates('last6months');
 
-    this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
-      if (this.authService.canLoadCompanyDashboard()) {
+    setTimeout(() => {
+      this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+
+      if (this.canDisplayDashboardValue) {
         this.loadAllOverviewData();
       } else {
         this.clearOverviewData();
       }
+    });
+
+    this.companyChangeSubscription = this.authService.selectedCompanyKey$.subscribe(() => {
+      setTimeout(() => {
+        this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+
+        if (this.canDisplayDashboardValue) {
+          this.loadAllOverviewData();
+        } else {
+          this.clearOverviewData();
+        }
+      });
     });
   }
 
@@ -824,7 +840,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
   }
 
   private loadAllOverviewData(): void {
-    if (!this.canDisplayDashboard()) {
+    if (!this.canDisplayDashboardValue) {
       this.clearOverviewData();
       return;
     }
@@ -1104,10 +1120,14 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
     return request$.pipe(
       finalize(() => {
-        this.dashboardLoadingRequests = Math.max(0, this.dashboardLoadingRequests - 1);
+        this.dashboardLoadingRequests--;
 
-        if (this.dashboardLoadingRequests === 0) {
-          this.isDashboardLoading = false;
+        if (this.dashboardLoadingRequests <= 0) {
+          this.dashboardLoadingRequests = 0;
+
+          setTimeout(() => {
+            this.isDashboardLoading = false;
+          });
         }
       }),
     );
@@ -1123,10 +1143,10 @@ export class OverviewComponent implements OnInit, OnDestroy {
     }
   }
 
-  canDisplayDashboard(): boolean {
+  /*canDisplayDashboard(): boolean {
     return this.authService.canLoadCompanyDashboard();
   }
-
+*/
   private loadOverviewKpis(): void {
     this.loadingKpis = true;
     this.kpiErrorMessage = '';

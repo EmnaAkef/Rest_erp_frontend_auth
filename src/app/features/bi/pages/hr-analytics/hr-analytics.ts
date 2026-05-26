@@ -47,6 +47,10 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroy$ = new Subject<void>();
   currency = '';
+  //loading
+  canDisplayDashboardValue = false;
+  dashboardLoadingRequests = 0;
+  //fin loading
 
   // ── HR filters ───────────────────────────────────────────────────────────────
   isHrFilterPanelOpen = false;
@@ -80,7 +84,6 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
   hasUpcomingBirthdaysData = false;
 
   isDashboardLoading = false;
-  private dashboardLoadingRequests = 0;
 
   workforceKpis: Array<{
     title: string;
@@ -370,7 +373,9 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
         this.dashboardLoadingRequests = Math.max(0, this.dashboardLoadingRequests - 1);
 
         if (this.dashboardLoadingRequests === 0) {
-          this.isDashboardLoading = false;
+          setTimeout(() => {
+            this.isDashboardLoading = false;
+          });
         }
       }),
     );
@@ -384,13 +389,28 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
     this.authService.syncSelectedCompanyKeyFromStorage();
     this.updateDateRange(this.selectedPeriod);
 
-    this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      if (this.canDisplayDashboard()) {
+    setTimeout(() => {
+      this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+
+      if (this.canDisplayDashboardValue) {
         this.loadFilterOptions();
         this.reloadAll();
       } else {
         this.clearHrData();
       }
+    });
+
+    this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      setTimeout(() => {
+        this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+
+        if (this.canDisplayDashboardValue) {
+          this.loadFilterOptions();
+          this.reloadAll();
+        } else {
+          this.clearHrData();
+        }
+      });
     });
   }
 
@@ -400,7 +420,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   private reloadAll(): void {
-    if (!this.canDisplayDashboard()) {
+    if (!this.canDisplayDashboardValue) {
       this.clearHrData();
       return;
     }
@@ -421,7 +441,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
 
     console.log('RH period:', period, this.startDate, this.endDate);
 
-    if (this.canDisplayDashboard()) {
+    if (this.canDisplayDashboardValue) {
       this.reloadAll();
     } else {
       this.clearHrData();
@@ -429,7 +449,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   private loadFilterOptions(): void {
-    if (!this.canDisplayDashboard()) {
+    if (!this.canDisplayDashboardValue) {
       return;
     }
 
@@ -939,10 +959,6 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
     this.selectedHrFilters = {};
     this.isHrFilterPanelOpen = false;
     this.reloadAll();
-  }
-
-  canDisplayDashboard(): boolean {
-    return this.authService.canLoadCompanyDashboard();
   }
 
   private clearHrData(): void {
