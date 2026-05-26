@@ -1,4 +1,13 @@
-import { Component, ElementRef, inject, OnDestroy, OnInit, PLATFORM_ID, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  inject,
+  OnDestroy,
+  OnInit,
+  PLATFORM_ID,
+  ViewChild,
+} from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 import html2canvas from 'html2canvas';
@@ -56,8 +65,14 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   isExportMenuOpen = false;
   loadingKpis = false;
   kpiErrorMessage = '';
-  isDashboardLoading = false;
+  //loading
+  private readonly cdr = inject(ChangeDetectorRef);
+  canDisplayDashboardValue = false;
+  isCompanyStateReady = false;
   private dashboardLoadingRequests = 0;
+  //fin
+  isDashboardLoading = false;
+
   selectedPeriod: 'last30days' | 'last6months' | 'yearToDate' = 'last6months';
 
   startDate = '';
@@ -94,16 +109,29 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     this.authService.refreshCurrentUser();
     this.authService.syncSelectedCompanyKeyFromStorage();
 
+    setTimeout(() => {
+      this.refreshDashboardAccessState();
+    });
+
     this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      if (this.canDisplayDashboard()) {
-        this.loadFinanceFilterOptions();
-        this.setPeriod(this.selectedPeriod);
-      } else {
-        this.clearFinanceData();
-      }
+      setTimeout(() => {
+        this.refreshDashboardAccessState();
+      });
     });
   }
+  private refreshDashboardAccessState(): void {
+    this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+    this.isCompanyStateReady = true;
 
+    if (this.canDisplayDashboardValue) {
+      this.loadFinanceFilterOptions();
+      this.setPeriod(this.selectedPeriod);
+    } else {
+      this.clearFinanceData();
+    }
+
+    this.cdr.detectChanges();
+  }
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -195,7 +223,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     { label: 'Office Equipment', value: 'Office Equipment' },
   ];
   private loadFinanceFilterOptions(): void {
-    if (!this.canDisplayDashboard()) {
+    if (!this.canDisplayDashboardValue) {
       return;
     }
 
@@ -365,7 +393,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     this.reloadAll();
   }
   private reloadAll(): void {
-    if (!this.canDisplayDashboard()) {
+    if (!this.canDisplayDashboardValue) {
       this.clearFinanceData();
       return;
     }
@@ -376,7 +404,6 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     this.loadTopOutstandingInvoices();
     this.loadLiabilityVsAssets();
     this.loadAssetDistribution();
-    //this.loadComplianceSummary();
     this.loadComplianceDetails();
   }
 
@@ -552,7 +579,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     this.startDate = this.formatDate(start);
     this.endDate = this.formatDate(today);
 
-    if (this.canDisplayDashboard()) {
+    if (this.canDisplayDashboardValue) {
       this.reloadAll();
     } else {
       this.clearFinanceData();
@@ -896,16 +923,18 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     return request$.pipe(
       finalize(() => {
         this.dashboardLoadingRequests = Math.max(0, this.dashboardLoadingRequests - 1);
+
         if (this.dashboardLoadingRequests === 0) {
-          this.isDashboardLoading = false;
+          setTimeout(() => {
+            this.isDashboardLoading = false;
+            this.cdr.detectChanges();
+          });
         }
       }),
     );
   }
 
-  canDisplayDashboard(): boolean {
-    return this.authService.canLoadCompanyDashboard();
-  }
+
 
   private clearFinanceData(): void {
     this.dashboardLoadingRequests = 0;

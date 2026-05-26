@@ -5,9 +5,8 @@ import {
   OnDestroy,
   ViewChild,
   inject,
-  signal,
-  computed,
   PLATFORM_ID,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { Chart, registerables, ChartConfiguration, ChartData } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -45,10 +44,13 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
   private biFormat = inject(BiFormatService);
   private authService = inject(AuthService);
   private readonly platformId = inject(PLATFORM_ID);
+
   private readonly destroy$ = new Subject<void>();
   currency = '';
   //loading
+  private readonly cdr = inject(ChangeDetectorRef);
   canDisplayDashboardValue = false;
+  isCompanyStateReady = false;
   dashboardLoadingRequests = 0;
   //fin loading
 
@@ -375,6 +377,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
         if (this.dashboardLoadingRequests === 0) {
           setTimeout(() => {
             this.isDashboardLoading = false;
+            this.cdr.detectChanges();
           });
         }
       }),
@@ -390,30 +393,28 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
     this.updateDateRange(this.selectedPeriod);
 
     setTimeout(() => {
-      this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
-
-      if (this.canDisplayDashboardValue) {
-        this.loadFilterOptions();
-        this.reloadAll();
-      } else {
-        this.clearHrData();
-      }
+      this.refreshDashboardAccessState();
     });
 
     this.authService.selectedCompanyKey$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       setTimeout(() => {
-        this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
-
-        if (this.canDisplayDashboardValue) {
-          this.loadFilterOptions();
-          this.reloadAll();
-        } else {
-          this.clearHrData();
-        }
+        this.refreshDashboardAccessState();
       });
     });
   }
+  private refreshDashboardAccessState(): void {
+    this.canDisplayDashboardValue = this.authService.canLoadCompanyDashboard();
+    this.isCompanyStateReady = true;
 
+    if (this.canDisplayDashboardValue) {
+      this.loadFilterOptions();
+      this.reloadAll();
+    } else {
+      this.clearHrData();
+    }
+
+    this.cdr.detectChanges();
+  }
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
