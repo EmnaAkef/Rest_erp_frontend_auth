@@ -37,6 +37,12 @@ export interface FinanceFilterOptionsResponse {
   vendorNames: string[];
   vendorIndustries: string[];
   accountNames: string[];
+
+  invoiceStatuses: string[];
+  statusGroups: string[];
+  accountTypes: string[];
+  transactionTypes: string[];
+  assetTypes: string[];
 }
 @Injectable({
   providedIn: 'root',
@@ -191,18 +197,21 @@ export class FinanceKpiService {
     return this.http.get<FinanceFilterOptionsResponse>(`${this.apiUrl}/filter-options`);
   }
 
-  getRecentTaxPayments(startDate: string, endDate: string) {
+  getRecentTaxPayments(
+    startDate: string,
+    endDate: string,
+    filters?: FinanceFilters,
+  ) {
+    const params = this.buildParams(startDate, endDate, filters);
+
     return this.http.get<any[]>(`${this.apiUrl}/recent-tax-payments`, {
-      params: {
-        startDate,
-        endDate,
-      },
+      params,
     });
   }
 
   getNextFilingDates() {
     return this.http.get<any[]>(`${this.apiUrl}/next-filing-dates`);
   }
-  
+
 }
 

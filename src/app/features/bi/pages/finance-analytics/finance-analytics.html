@@ -72,33 +72,22 @@
             </div>
 
             <div class="filter-grid">
-              <label class="filter-field autocomplete-wrapper">
+              <label class="filter-field">
                 <span>Customer</span>
-
-                <input
-                  type="text"
-                  placeholder="Search customer"
-                  [(ngModel)]="draftFinanceFilters.customerName"
-                  (focus)="showFinanceAutocomplete('customerName')"
-                  (input)="onCustomerNameInput()"
-                  (blur)="closeFinanceAutocomplete()" />
-
-                @if (activeFinanceAutocomplete === 'customerName' && filteredCustomerNames.length > 0) {
-                  <div class="autocomplete-panel">
-                    @for (option of filteredCustomerNames; track option) {
-                      <button type="button" (mousedown)="selectCustomerName(option)">
-                        {{ option }}
-                      </button>
-                    }
-                  </div>
-                }
+                <select [(ngModel)]="draftFinanceFilters.customerName">
+                  <option [ngValue]="null">All customers</option>
+                  @for (option of financeFilterOptions.customerNames; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
+                  }
+                </select>
               </label>
+
               <label class="filter-field">
                 <span>Invoice Status</span>
                 <select [(ngModel)]="draftFinanceFilters.invoiceStatus">
                   <option [ngValue]="null">All statuses</option>
-                  @for (option of invoiceStatusOptions; track option.value) {
-                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  @for (option of financeFilterOptions.invoiceStatuses; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
                   }
                 </select>
               </label>
@@ -107,127 +96,78 @@
                 <span>Status Group</span>
                 <select [(ngModel)]="draftFinanceFilters.statusGroup">
                   <option [ngValue]="null">All groups</option>
-                  @for (option of statusGroupOptions; track option.value) {
-                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  @for (option of financeFilterOptions.statusGroups; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
                   }
                 </select>
               </label>
-              <label class="filter-field autocomplete-wrapper">
+
+              <label class="filter-field">
                 <span>Customer Category</span>
-
-                <input
-                  type="text"
-                  placeholder="Customer category"
-                  [(ngModel)]="draftFinanceFilters.customerCategory"
-                  (focus)="showFinanceAutocomplete('customerCategory')"
-                  (input)="onCustomerCategoryInput()"
-                  (blur)="closeFinanceAutocomplete()" />
-
-                @if (activeFinanceAutocomplete === 'customerCategory' && filteredCustomerCategories.length > 0) {
-                  <div class="autocomplete-panel">
-                    @for (option of filteredCustomerCategories; track option) {
-                      <button type="button" (mousedown)="selectCustomerCategory(option)">
-                        {{ option }}
-                      </button>
-                    }
-                  </div>
-                }
+                <select [(ngModel)]="draftFinanceFilters.customerCategory">
+                  <option [ngValue]="null">All categories</option>
+                  @for (option of financeFilterOptions.customerCategories; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
+                  }
+                </select>
               </label>
 
-              <label class="filter-field autocomplete-wrapper">
+              <label class="filter-field">
                 <span>Vendor</span>
-
-                <input
-                  type="text"
-                  placeholder="Search vendor"
-                  [(ngModel)]="draftFinanceFilters.vendorName"
-                  (focus)="showFinanceAutocomplete('vendorName')"
-                  (input)="onVendorNameInput()"
-                  (blur)="closeFinanceAutocomplete()" />
-
-                @if (activeFinanceAutocomplete === 'vendorName' && filteredVendorNames.length > 0) {
-                  <div class="autocomplete-panel">
-                    @for (option of filteredVendorNames; track option) {
-                      <button type="button" (mousedown)="selectVendorName(option)">
-                        {{ option }}
-                      </button>
-                    }
-                  </div>
-                }
+                <select [(ngModel)]="draftFinanceFilters.vendorName">
+                  <option [ngValue]="null">All vendors</option>
+                  @for (option of financeFilterOptions.vendorNames; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
+                  }
+                </select>
               </label>
 
-              <label class="filter-field autocomplete-wrapper">
+              <label class="filter-field">
                 <span>Vendor Industry</span>
-
-                <input
-                  type="text"
-                  placeholder="Vendor industry"
-                  [(ngModel)]="draftFinanceFilters.vendorIndustry"
-                  (focus)="showFinanceAutocomplete('vendorIndustry')"
-                  (input)="onVendorIndustryInput()"
-                  (blur)="closeFinanceAutocomplete()" />
-
-                @if (activeFinanceAutocomplete === 'vendorIndustry' && filteredVendorIndustries.length > 0) {
-                  <div class="autocomplete-panel">
-                    @for (option of filteredVendorIndustries; track option) {
-                      <button type="button" (mousedown)="selectVendorIndustry(option)">
-                        {{ option }}
-                      </button>
-                    }
-                  </div>
-                }
+                <select [(ngModel)]="draftFinanceFilters.vendorIndustry">
+                  <option [ngValue]="null">All industries</option>
+                  @for (option of financeFilterOptions.vendorIndustries; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
+                  }
+                </select>
               </label>
-
-
 
               <label class="filter-field">
                 <span>Account Type</span>
                 <select [(ngModel)]="draftFinanceFilters.accountType">
                   <option [ngValue]="null">All account types</option>
-                  @for (option of accountTypeOptions; track option.value) {
-                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  @for (option of financeFilterOptions.accountTypes; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
                   }
                 </select>
               </label>
 
-
-              <label class="filter-field autocomplete-wrapper">
+              <label class="filter-field">
                 <span>Account Name</span>
-
-                <input
-                  type="text"
-                  placeholder="Search account"
-                  [(ngModel)]="draftFinanceFilters.accountName"
-                  (focus)="showFinanceAutocomplete('accountName')"
-                  (input)="onAccountNameInput()"
-                  (blur)="closeFinanceAutocomplete()" />
-
-                @if (activeFinanceAutocomplete === 'accountName' && filteredAccountNames.length > 0) {
-                  <div class="autocomplete-panel">
-                    @for (option of filteredAccountNames; track option) {
-                      <button type="button" (mousedown)="selectAccountName(option)">
-                        {{ option }}
-                      </button>
-                    }
-                  </div>
-                }
+                <select [(ngModel)]="draftFinanceFilters.accountName">
+                  <option [ngValue]="null">All accounts</option>
+                  @for (option of financeFilterOptions.accountNames; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
+                  }
+                </select>
               </label>
 
               <label class="filter-field">
                 <span>Transaction Type</span>
                 <select [(ngModel)]="draftFinanceFilters.transactionType">
                   <option [ngValue]="null">All transaction types</option>
-                  @for (option of transactionTypeOptions; track option.value) {
-                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  @for (option of financeFilterOptions.transactionTypes; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
                   }
                 </select>
               </label>
+
               <label class="filter-field">
                 <span>Asset Type</span>
                 <select [(ngModel)]="draftFinanceFilters.assetType">
                   <option [ngValue]="null">All asset types</option>
-                  @for (option of assetTypeOptions; track option.value) {
-                    <option [ngValue]="option.value">{{ option.label }}</option>
+                  @for (option of financeFilterOptions.assetTypes; track option) {
+                    <option [ngValue]="option">{{ option }}</option>
                   }
                 </select>
               </label>

@@ -24,7 +24,7 @@ import {
   FinanceAssetDistributionItem,
   FinanceComplianceSummaryResponse,
 } from '../../models/finance-kpi-response';
-import { FinanceFilterOptionsResponse } from '../../services/finance-kpi.service';
+import { FinanceFilterOptionsResponse, FinanceFilters } from '../../services/finance-kpi.service';
 import { KpiCardComponent } from '../../components/kpi-card/kpi-card';
 import { BiFormatService } from '../../services/bi-format.service';
 import { Observable, Subject } from 'rxjs';
@@ -139,105 +139,61 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   // ── Finance filters ─────────────────────────────────────────────────────────
   isFinanceFilterOpen = false;
 
-  appliedFinanceFilters = {
-    customerName: null as string | null,
-    customerCategory: null as string | null,
-
-    vendorName: null as string | null,
-    vendorIndustry: null as string | null,
-
-    invoiceStatus: null as string | null,
-    statusGroup: null as string | null,
-
-    accountName: null as string | null,
-    accountType: null as string | null,
-    transactionType: null as string | null,
-
-    assetType: null as string | null,
-
-    minAmount: null as number | null,
-    maxAmount: null as number | null,
-  };
+  appliedFinanceFilters: FinanceFilters = this.createEmptyFinanceFilters();
   financeFilterOptions: FinanceFilterOptionsResponse = {
     customerNames: [],
     customerCategories: [],
     vendorNames: [],
     vendorIndustries: [],
     accountNames: [],
+
+    invoiceStatuses: [],
+    statusGroups: [],
+    accountTypes: [],
+    transactionTypes: [],
+    assetTypes: [],
   };
 
-  filteredCustomerNames: string[] = [];
-  filteredCustomerCategories: string[] = [];
-  filteredVendorNames: string[] = [];
-  filteredVendorIndustries: string[] = [];
-  filteredAccountNames: string[] = [];
-
-  activeFinanceAutocomplete:
-    | 'customerName'
-    | 'customerCategory'
-    | 'vendorName'
-    | 'vendorIndustry'
-    | 'accountName'
-    | null = null;
   draftFinanceFilters = { ...this.appliedFinanceFilters };
 
-  invoiceStatusOptions = [
-    { label: 'Overdue', value: 'Overdue' },
-    { label: 'Due Soon', value: 'Due Soon' },
-    { label: 'Waiting', value: 'WAITING' },
-    { label: 'Paid', value: 'PAID' },
-    { label: 'Pending', value: 'PENDING' },
-  ];
-  statusGroupOptions = [
-    { label: 'Paid', value: 'PAID' },
-    { label: 'Pending', value: 'PENDING' },
-    { label: 'Validated', value: 'VALIDATED' },
-  ];
 
-  transactionTypeOptions = [
-    { label: 'Debit', value: 'debit' },
-    { label: 'Credit', value: 'credit' },
-    { label: 'Income', value: 'income' },
-    { label: 'Expense', value: 'expense' },
-  ];
-  accountTypeOptions = [
-    { label: 'Cash and Cash Equivalents', value: 'cash and cash equivalents' },
-    { label: 'Bank Balance', value: 'bank balance' },
-    { label: 'Current Liability', value: 'current liability' },
-    { label: 'Liability', value: 'liability' },
-  ];
+  private toLabelArray(options: any[] | undefined | null): string[] {
+    return (options ?? [])
+      .map((option) => {
+        if (typeof option === 'string') {
+          return option;
+        }
 
-  taxTypeOptions = [
-    { label: 'VAT Collected', value: 'VAT Collected' },
-    { label: 'VAT Payable', value: 'VAT Payable' },
-    { label: 'Estimated Tax', value: 'Estimated Tax' },
-  ];
+        return option.label ?? option.value ?? '';
+      })
+      .filter((value) => value !== null && value !== undefined && value.toString().trim() !== '')
+      .map((value) => value.toString());
+  }
 
-  assetTypeOptions = [
-    { label: 'IT Equipment', value: 'IT Equipment' },
-    { label: 'Mobile Devices', value: 'Mobile Devices' },
-    { label: 'Furniture', value: 'Furniture' },
-    { label: 'Vehicles', value: 'Vehicles' },
-    { label: 'Security Systems', value: 'Security Systems' },
-    { label: 'Infrastructure', value: 'Infrastructure' },
-    { label: 'Office Equipment', value: 'Office Equipment' },
-  ];
   private loadFinanceFilterOptions(): void {
     if (!this.canDisplayDashboardValue) {
       return;
     }
 
     this.financeKpiService.getFinanceFilterOptions().subscribe({
-      next: (data) => {
+      next: (data: any) => {
+        console.log('Finance filters raw API response:', data);
+
         this.financeFilterOptions = {
-          customerNames: data.customerNames ?? [],
-          customerCategories: data.customerCategories ?? [],
-          vendorNames: data.vendorNames ?? [],
-          vendorIndustries: data.vendorIndustries ?? [],
-          accountNames: data.accountNames ?? [],
+          customerNames: this.toLabelArray(data.customerNames ?? data.customers),
+          customerCategories: this.toLabelArray(data.customerCategories),
+          vendorNames: this.toLabelArray(data.vendorNames ?? data.vendors),
+          vendorIndustries: this.toLabelArray(data.vendorIndustries),
+          accountNames: this.toLabelArray(data.accountNames ?? data.accounts),
+
+          invoiceStatuses: this.toLabelArray(data.invoiceStatuses),
+          statusGroups: this.toLabelArray(data.statusGroups),
+          accountTypes: this.toLabelArray(data.accountTypes),
+          transactionTypes: this.toLabelArray(data.transactionTypes),
+          assetTypes: this.toLabelArray(data.assetTypes),
         };
 
-        this.refreshAllFinanceSuggestions();
+        console.log('Finance filters mapped:', this.financeFilterOptions);
       },
       error: (error) => {
         console.error('Erreur chargement options filtres finance:', error);
@@ -245,114 +201,22 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     });
   }
 
-  private filterStartsWith(value: string | null, options: string[]): string[] {
-    const search = (value ?? '').trim().toLowerCase();
 
-    if (!search) {
-      return options.slice(0, 8);
-    }
-
-    return options.filter((option) => option.toLowerCase().startsWith(search)).slice(0, 8);
-  }
-
-  private refreshAllFinanceSuggestions(): void {
-    this.filteredCustomerNames = this.filterStartsWith(
-      this.draftFinanceFilters.customerName,
-      this.financeFilterOptions.customerNames,
-    );
-
-    this.filteredCustomerCategories = this.filterStartsWith(
-      this.draftFinanceFilters.customerCategory,
-      this.financeFilterOptions.customerCategories,
-    );
-
-    this.filteredVendorNames = this.filterStartsWith(
-      this.draftFinanceFilters.vendorName,
-      this.financeFilterOptions.vendorNames,
-    );
-
-    this.filteredVendorIndustries = this.filterStartsWith(
-      this.draftFinanceFilters.vendorIndustry,
-      this.financeFilterOptions.vendorIndustries,
-    );
-
-    this.filteredAccountNames = this.filterStartsWith(
-      this.draftFinanceFilters.accountName,
-      this.financeFilterOptions.accountNames,
-    );
-  }
-
-  showFinanceAutocomplete(
-    field: 'customerName' | 'customerCategory' | 'vendorName' | 'vendorIndustry' | 'accountName',
-  ): void {
-    this.activeFinanceAutocomplete = field;
-    this.refreshAllFinanceSuggestions();
-  }
-
-  closeFinanceAutocomplete(): void {
-    setTimeout(() => {
-      this.activeFinanceAutocomplete = null;
-    }, 150);
-  }
-
-  onCustomerNameInput(): void {
-    this.filteredCustomerNames = this.filterStartsWith(
-      this.draftFinanceFilters.customerName,
-      this.financeFilterOptions.customerNames,
-    );
-  }
-
-  onCustomerCategoryInput(): void {
-    this.filteredCustomerCategories = this.filterStartsWith(
-      this.draftFinanceFilters.customerCategory,
-      this.financeFilterOptions.customerCategories,
-    );
-  }
-
-  onVendorNameInput(): void {
-    this.filteredVendorNames = this.filterStartsWith(
-      this.draftFinanceFilters.vendorName,
-      this.financeFilterOptions.vendorNames,
-    );
-  }
-
-  onVendorIndustryInput(): void {
-    this.filteredVendorIndustries = this.filterStartsWith(
-      this.draftFinanceFilters.vendorIndustry,
-      this.financeFilterOptions.vendorIndustries,
-    );
-  }
-
-  onAccountNameInput(): void {
-    this.filteredAccountNames = this.filterStartsWith(
-      this.draftFinanceFilters.accountName,
-      this.financeFilterOptions.accountNames,
-    );
-  }
-
-  selectCustomerName(value: string): void {
-    this.draftFinanceFilters.customerName = value;
-    this.activeFinanceAutocomplete = null;
-  }
-
-  selectCustomerCategory(value: string): void {
-    this.draftFinanceFilters.customerCategory = value;
-    this.activeFinanceAutocomplete = null;
-  }
-
-  selectVendorName(value: string): void {
-    this.draftFinanceFilters.vendorName = value;
-    this.activeFinanceAutocomplete = null;
-  }
-
-  selectVendorIndustry(value: string): void {
-    this.draftFinanceFilters.vendorIndustry = value;
-    this.activeFinanceAutocomplete = null;
-  }
-
-  selectAccountName(value: string): void {
-    this.draftFinanceFilters.accountName = value;
-    this.activeFinanceAutocomplete = null;
+  private createEmptyFinanceFilters(): FinanceFilters {
+    return {
+      customerName: null,
+      customerCategory: null,
+      vendorName: null,
+      vendorIndustry: null,
+      invoiceStatus: null,
+      statusGroup: null,
+      accountName: null,
+      accountType: null,
+      transactionType: null,
+      assetType: null,
+      minAmount: null,
+      maxAmount: null,
+    };
   }
   toggleFinanceFilters(): void {
     this.isFinanceFilterOpen = !this.isFinanceFilterOpen;
@@ -367,25 +231,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   resetFinanceFilters(): void {
-    this.draftFinanceFilters = {
-      customerName: null,
-      customerCategory: null,
-
-      vendorName: null,
-      vendorIndustry: null,
-
-      invoiceStatus: null,
-      statusGroup: null,
-
-      accountName: null,
-      accountType: null,
-      transactionType: null,
-
-      assetType: null,
-
-      minAmount: null,
-      maxAmount: null,
-    };
+    this.draftFinanceFilters = this.createEmptyFinanceFilters();
 
     this.appliedFinanceFilters = { ...this.draftFinanceFilters };
     this.isFinanceFilterOpen = false;
@@ -408,8 +254,8 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   private cleanFinanceFilters(
-    filters: typeof this.appliedFinanceFilters,
-  ): typeof this.appliedFinanceFilters {
+    filters: FinanceFilters,
+  ): FinanceFilters {
     return {
       customerName: filters.customerName?.trim() || null,
       customerCategory: filters.customerCategory?.trim() || null,
@@ -1170,7 +1016,9 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
       },
     });
 
-    this.financeKpiService.getRecentTaxPayments(this.startDate, this.endDate).subscribe({
+    this.financeKpiService
+      .getRecentTaxPayments(this.startDate, this.endDate, this.appliedFinanceFilters)
+      .subscribe({
       next: (data) => {
         this.taxPayments = data.map((item) => ({
           code: item.code,
