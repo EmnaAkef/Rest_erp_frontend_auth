@@ -56,6 +56,7 @@ interface FinanceKpiCard {
 })
 export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  private readonly exportFileBaseName = 'finance-analytics-dashboard';
   hasRevenueProfitTrendData = false;
   hasCashFlowData = false;
   hasOutstandingInvoicesData = false;
@@ -850,12 +851,13 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
       remaining -= pageH;
     }
 
-    pdf.save('finance-analytics-dashboard.pdf');
+    pdf.setProperties({ title: this.exportFileBaseName });
+    pdf.save(`${this.exportFileBaseName}.pdf`);
   }
 
   exportAsExcel(): void {
     this.isExportMenuOpen = false;
-    this.downloadWorkbook('finance-analytics-data.xlsx');
+    this.downloadWorkbook(`${this.exportFileBaseName}-data.xlsx`);
   }
 
   exportAsCSV(): void {
@@ -866,7 +868,7 @@ export class FinanceAnalyticsComponent implements OnInit, OnDestroy {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = Object.assign(document.createElement('a'), {
       href: url,
-      download: 'finance-analytics-data.csv',
+      download: `${this.exportFileBaseName}-data.csv`,
     });
 
     a.click();

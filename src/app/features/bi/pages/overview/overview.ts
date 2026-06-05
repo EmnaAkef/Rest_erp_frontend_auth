@@ -50,6 +50,7 @@ interface OverviewKpiCard {
 })
 export class OverviewComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  private readonly exportFileBaseName = 'overview-dashboard';
   companyCurrency = 'USD';
   isExportMenuOpen = false;
   loadingKpis = false;
@@ -1024,7 +1025,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('overview-dashboard.pdf');
+    pdf.setProperties({ title: this.exportFileBaseName });
+    pdf.save(`${this.exportFileBaseName}.pdf`);
   }
   exportAsExcel(): void {
     this.isExportMenuOpen = false;
@@ -1034,7 +1036,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const workbook = XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Overview');
-    XLSX.writeFile(workbook, 'overview-dashboard-data.xlsx');
+    XLSX.writeFile(workbook, `${this.exportFileBaseName}-data.xlsx`);
   }
 
   exportAsCSV(): void {
@@ -1049,7 +1051,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', 'overview-dashboard-data.csv');
+    link.setAttribute('download', `${this.exportFileBaseName}-data.csv`);
     link.click();
 
     URL.revokeObjectURL(url);

@@ -39,6 +39,7 @@ Chart.register(...registerables);
 })
 export class HrAnalyticsComponent implements OnInit, OnDestroy {
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  private readonly exportFileBaseName = 'hr-analytics-dashboard';
 
   private hrService = inject(HrService);
   private biFormat = inject(BiFormatService);
@@ -1069,7 +1070,8 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
       heightLeft -= pageHeight;
     }
 
-    pdf.save('Hr-Analytics-dashboard.pdf');
+    pdf.setProperties({ title: this.exportFileBaseName });
+    pdf.save(`${this.exportFileBaseName}.pdf`);
   }
 
   exportAsExcel(): void {
@@ -1080,7 +1082,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
     const workbook = XLSX.utils.book_new();
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'HR Analytics');
-    XLSX.writeFile(workbook, 'hr-analytics-data.xlsx');
+    XLSX.writeFile(workbook, `${this.exportFileBaseName}-data.xlsx`);
   }
 
   exportAsCSV(): void {
@@ -1095,7 +1097,7 @@ export class HrAnalyticsComponent implements OnInit, OnDestroy {
     const url = URL.createObjectURL(blob);
 
     link.setAttribute('href', url);
-    link.setAttribute('download', 'hr-analytics-data.csv');
+    link.setAttribute('download', `${this.exportFileBaseName}-data.csv`);
     link.click();
 
     URL.revokeObjectURL(url);

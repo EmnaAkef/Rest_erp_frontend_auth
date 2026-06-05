@@ -93,6 +93,7 @@ Chart.register(...registerables);
 export class CrmSalesComponent implements OnInit, OnDestroy {
   // ── Refs & DI ──────────────────────────────────────────────────────────────
   @ViewChild('dashboardContent', { static: false }) dashboardContent!: ElementRef;
+  private readonly exportFileBaseName = 'crm-sales-dashboard';
   private readonly salesService = inject(SalesService);
   private readonly authService = inject(AuthService);
   private readonly destroy$ = new Subject<void>();
@@ -744,12 +745,13 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
       remaining -= pageH;
     }
 
-    pdf.save('crm-sales-dashboard.pdf');
+    pdf.setProperties({ title: this.exportFileBaseName });
+    pdf.save(`${this.exportFileBaseName}.pdf`);
   }
 
   exportAsExcel(): void {
     this.isExportMenuOpen = false;
-    this.downloadWorkbook('crm-sales-data.xlsx', 'xlsx');
+    this.downloadWorkbook(`${this.exportFileBaseName}-data.xlsx`, 'xlsx');
   }
 
   exportAsCSV(): void {
@@ -760,7 +762,7 @@ export class CrmSalesComponent implements OnInit, OnDestroy {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = Object.assign(document.createElement('a'), {
       href: url,
-      download: 'crm-sales-data.csv',
+      download: `${this.exportFileBaseName}-data.csv`,
     });
 
     a.click();
