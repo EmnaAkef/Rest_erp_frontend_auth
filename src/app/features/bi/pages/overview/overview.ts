@@ -1348,7 +1348,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
       return `-${formatted}`;
     }
 
-    return '$0';
+    return this.formatCompactCurrency(0);
   }
   exportExecutiveLedgerAsCSV(): void {
     const rows = this.executiveLedger.map((item) => ({

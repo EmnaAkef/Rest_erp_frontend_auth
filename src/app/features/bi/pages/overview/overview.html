@@ -431,9 +431,9 @@
 
             <td
               class="money profit-value"
-              [class.positive-value]="!item.profit.includes('-') && item.profit !== '$0'"
+              [class.positive-value]="item.profit.includes('+')"
               [class.negative-value]="item.profit.includes('-')"
-              [class.zero-value]="item.profit === '$0'">
+              [class.zero-value]="!item.profit.includes('+') && !item.profit.includes('-')">
               {{ item.profit }}
             </td>
 
