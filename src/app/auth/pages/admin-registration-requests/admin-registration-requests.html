@@ -84,23 +84,25 @@
               <td>{{ request.createdAt | date: 'short' }}</td>
 
               <td>
-                <div class="action-buttons">
-                  <button
-                    class="approve-btn"
-                    [disabled]="request.status !== 'PENDING' || actionLoadingId() === request.id"
-                    (click)="approve(request)"
-                  >
-                    Approve
-                  </button>
+                @if (request.status !== 'APPROVED' && request.status !== 'REJECTED') {
+                  <div class="action-buttons">
+                    <button
+                      class="approve-btn"
+                      [disabled]="request.status !== 'PENDING' || actionLoadingId() === request.id"
+                      (click)="approve(request)"
+                    >
+                      Approve
+                    </button>
 
-                  <button
-                    class="reject-btn"
-                    [disabled]="request.status === 'APPROVED' || request.status === 'REJECTED' || actionLoadingId() === request.id"
-                    (click)="reject(request)"
-                  >
-                    Reject
-                  </button>
-                </div>
+                    <button
+                      class="reject-btn"
+                      [disabled]="actionLoadingId() === request.id"
+                      (click)="reject(request)"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                }
               </td>
             </tr>
           } @empty {

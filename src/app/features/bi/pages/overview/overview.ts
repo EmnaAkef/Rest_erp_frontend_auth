@@ -1028,6 +1028,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
     pdf.setProperties({ title: this.exportFileBaseName });
     pdf.save(`${this.exportFileBaseName}.pdf`);
   }
+
   exportAsExcel(): void {
     this.isExportMenuOpen = false;
 
