@@ -46,16 +46,7 @@ Il permet aux utilisateurs de consulter les tableaux de bord, d’appliquer des 
 | Base de données         | Non utilisée directement côté frontend    |
 | Outils / Environnement  | Node.js, npm, Git, VS Code, REST API      |
 
----
 
-## 📸 Aperçu / Démo
-
-![Aperçu Dashboard](screenshots/overview-dashboard.png)
-
-🔗 **Démo en ligne** : Non disponible
-🎥 **Vidéo de démonstration** : À ajouter si disponible
-
----
 
 ## ⚙️ Installation
 
